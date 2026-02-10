@@ -4,7 +4,7 @@
 // ============================================================
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Github, Linkedin, Mail, FileText, ChevronDown, ArrowRight, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Github, ChevronDown, ArrowRight, ArrowLeft, ExternalLink, FileText } from 'lucide-react';
 import './App.css';
 import './enhancements.css';
 
@@ -12,10 +12,8 @@ import './enhancements.css';
 import {
   useKeyboardNavigation,
   useGestures,
-  usePrefersReducedMotion,
   useSoundEffects,
   useAchievements,
-  useScreenShake,
   useKonamiCode,
   useColorTheme,
   useConsoleMessage
@@ -28,10 +26,8 @@ import {
   JourneyTimeline,
   CustomCursor,
   CinematicBars,
-  ParallaxOverlay,
   AchievementNotification,
   SoundToggle,
-  MobileControls,
   OrientationWarning,
   MiniMap,
   PortfolioErrorBoundary
@@ -157,7 +153,6 @@ const LoadingScreen = ({ progress, currentItem, loadedVideos, totalVideos }) => 
   }, []);
 
   useEffect(() => {
-    // Generate falling particles
     const newParticles = Array.from({ length: 50 }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
@@ -171,14 +166,12 @@ const LoadingScreen = ({ progress, currentItem, loadedVideos, totalVideos }) => 
 
   return (
     <div className="loading-screen">
-      {/* Animated Background */}
       <div className="loading-bg">
         <div className="loading-gradient-orb orb-1" />
         <div className="loading-gradient-orb orb-2" />
         <div className="loading-gradient-orb orb-3" />
       </div>
 
-      {/* Falling Particles */}
       <div className="loading-particles">
         {particles.map(p => (
           <div
@@ -197,13 +190,11 @@ const LoadingScreen = ({ progress, currentItem, loadedVideos, totalVideos }) => 
       </div>
 
       <div className="loading-content">
-        {/* Logo/Brand */}
         <div className="loading-brand">
           <span className="loading-logo">VS</span>
           <span className="loading-brand-text">VANDAN SHARMA</span>
         </div>
 
-        {/* Animated Train Track */}
         <div className="loading-train-section">
           <div className="loading-track">
             <div className="loading-track-line" />
@@ -226,7 +217,6 @@ const LoadingScreen = ({ progress, currentItem, loadedVideos, totalVideos }) => 
           </div>
         </div>
 
-        {/* Progress Section */}
         <div className="loading-progress-section">
           <div className="loading-bar-container">
             <div className="loading-bar-bg" />
@@ -248,18 +238,15 @@ const LoadingScreen = ({ progress, currentItem, loadedVideos, totalVideos }) => 
           </div>
         </div>
 
-        {/* Current Loading Item */}
         <div className="loading-current">
           <div className="loading-spinner" />
           <span>{currentItem || 'Preparing...'}</span>
         </div>
 
-        {/* Hints */}
         <p className="loading-hint" key={hintIndex}>
           {LOADING_HINTS[hintIndex]}
         </p>
 
-        {/* Footer */}
         <div className="loading-footer">
           <span>Systems Engineer Portfolio</span>
           <span className="loading-dot">•</span>
@@ -340,7 +327,6 @@ const ParticleContact = () => {
         p.x += p.vx;
         p.y += p.vy;
 
-        // Glow effect
         const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
         gradient.addColorStop(0, p.color);
         gradient.addColorStop(1, 'transparent');
@@ -355,20 +341,16 @@ const ParticleContact = () => {
         ctx.fill();
       });
 
-      // Draw labels
       ctx.textAlign = 'center';
       ctx.font = 'bold 18px system-ui';
       iconsRef.current.forEach(icon => {
-        // Icon emoji
         ctx.font = '32px system-ui';
         ctx.fillText(icon.icon, icon.cx, icon.cy - 70);
 
-        // Label
         ctx.font = 'bold 16px system-ui';
         ctx.fillStyle = icon.color;
         ctx.fillText(icon.label, icon.cx, icon.cy + 90);
 
-        // Hint
         ctx.font = '12px system-ui';
         ctx.fillStyle = 'rgba(255,255,255,0.5)';
         ctx.fillText('Click to connect', icon.cx, icon.cy + 110);
@@ -408,7 +390,6 @@ const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, can
   return (
     <div className={`modal-overlay ${isVisible ? 'visible' : ''}`}>
       <div className="project-panel" style={{ '--accent': project.color }}>
-        {/* Navigation Arrows */}
         <button
           className={`project-nav-arrow prev ${canGoPrev ? '' : 'disabled'}`}
           onClick={() => canGoPrev && onNavigate('prev')}
@@ -425,7 +406,6 @@ const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, can
         </button>
 
         <div className="project-content">
-          {/* Header */}
           <div className="project-header">
             <div className="project-deity-badge">
               <span className="project-icon">{project.icon}</span>
@@ -434,17 +414,14 @@ const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, can
             <button className="project-close" onClick={onClose}>✕</button>
           </div>
 
-          {/* Title Section */}
           <div className="project-title-section">
             <h1 className="project-name">{project.name}</h1>
             <p className="project-tagline">{project.tagline}</p>
             <p className="project-quote">"{project.quote}"</p>
           </div>
 
-          {/* Description */}
           <p className="project-description">{project.description}</p>
 
-          {/* Features */}
           <div className="project-section">
             <h3>KEY FEATURES</h3>
             <div className="project-features">
@@ -457,7 +434,6 @@ const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, can
             </div>
           </div>
 
-          {/* Tech Stack */}
           <div className="project-section">
             <h3>TECH STACK</h3>
             <div className="stack-tags">
@@ -467,7 +443,6 @@ const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, can
             </div>
           </div>
 
-          {/* Project Navigation Dots */}
           <div className="project-dots">
             {PROJECT_ORDER.map((key) => (
               <button
@@ -479,7 +454,6 @@ const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, can
             ))}
           </div>
 
-          {/* Actions */}
           <div className="project-actions">
             <button onClick={onClose} className="action-back">
               <ArrowLeft size={16} />
@@ -540,81 +514,25 @@ function AppContent() {
   const [isLooping, setIsLooping] = useState(false);
   const [fadeOverlay, setFadeOverlay] = useState(false);
   const [cursorType, setCursorType] = useState('');
-  const [showCinematic, setShowCinematic] = useState(false);
   const [konamiActivated, setKonamiActivated] = useState(false);
   const [srAnnouncement, setSrAnnouncement] = useState('');
 
   const currentScenes = phase === 'intro' ? INTRO_SCENES : OUTRO_SCENES;
 
   // ── CUSTOM HOOKS ────────────────────────────────────────
-  const prefersReducedMotion = usePrefersReducedMotion();
   const { enabled: soundEnabled, setEnabled: setSoundEnabled, playSound } = useSoundEffects();
-  const { unlocked, unlock, showNotification } = useAchievements();
-  const { shake, triggerShake } = useScreenShake();
+  const { unlock, showNotification } = useAchievements();
 
-  // Console easter egg
   useConsoleMessage();
 
-  // Color theme based on current scene
   const currentSceneKey = currentScenes[sceneIndex]?.id || 'name_fall';
   useColorTheme(currentSceneKey);
 
-  // Konami code
   useKonamiCode(() => {
     setKonamiActivated(true);
     unlock('KONAMI');
     playSound('success', { frequency: 880, duration: 0.3 });
     setTimeout(() => setKonamiActivated(false), 5000);
-  });
-
-  // Keyboard navigation
-  const scrollToNext = useCallback(() => {
-    if (phase !== 'intro' && phase !== 'outro') return;
-    window.scrollBy({ top: 100, behavior: 'smooth' });
-    playSound('scroll', { frequency: 600, duration: 0.05 });
-  }, [phase, playSound]);
-
-  const scrollToPrev = useCallback(() => {
-    if (phase !== 'intro' && phase !== 'outro') return;
-    window.scrollBy({ top: -100, behavior: 'smooth' });
-    playSound('scroll', { frequency: 500, duration: 0.05 });
-  }, [phase, playSound]);
-
-  const handleKeySelect = useCallback((key) => {
-    if (currentScenes[sceneIndex]?.allowClick && phase === 'intro') {
-      if (key) {
-        handleDeityClick(key);
-      }
-    }
-  }, [phase, sceneIndex, currentScenes]);
-
-  const handleKeyBack = useCallback(() => {
-    if (phase === 'deity') {
-      handleDeityBack();
-    }
-  }, [phase]);
-
-  useKeyboardNavigation({
-    onNext: scrollToNext,
-    onPrev: scrollToPrev,
-    onSelect: handleKeySelect,
-    onBack: handleKeyBack
-  });
-
-  // Touch gestures
-  useGestures(gestureRef, {
-    onSwipeUp: scrollToNext,
-    onSwipeDown: scrollToPrev,
-    onSwipeLeft: () => {
-      if (activeDeity) {
-        handleProjectNavigate('next');
-      }
-    },
-    onSwipeRight: () => {
-      if (activeDeity) {
-        handleProjectNavigate('prev');
-      }
-    }
   });
 
   // ── DRAW FRAME FUNCTION ─────────────────────────────────
@@ -660,6 +578,104 @@ function AppContent() {
     return true;
   }, []);
 
+  // ── DEITY HANDLERS (defined before hooks that use them) ──
+  const handleDeityClick = useCallback((deity) => {
+    setActiveDeity(deity);
+    setPhase('deity');
+    setDeityStage('zoom');
+    setIsReversing(false);
+    setShowProject(false);
+    playSound('transition', { frequency: 700, duration: 0.2 });
+    setCursorType('');
+    setSrAnnouncement(`Entering ${PROJECTS[deity]?.name} project`);
+    visitedProjectsRef.current.add(deity);
+
+    if (visitedProjectsRef.current.size === 3) {
+      unlock('EXPLORER');
+    }
+  }, [playSound, unlock]);
+
+  const handleDeityBack = useCallback(() => {
+    setShowProject(false);
+    setIsReversing(true);
+    playSound('back', { frequency: 500, duration: 0.15 });
+    setSrAnnouncement('Returning to mountain selection');
+  }, [playSound]);
+
+  // Keyboard navigation
+  const scrollToNext = useCallback(() => {
+    if (phase !== 'intro' && phase !== 'outro') return;
+    window.scrollBy({ top: 100, behavior: 'smooth' });
+    playSound('scroll', { frequency: 600, duration: 0.05 });
+  }, [phase, playSound]);
+
+  const scrollToPrev = useCallback(() => {
+    if (phase !== 'intro' && phase !== 'outro') return;
+    window.scrollBy({ top: -100, behavior: 'smooth' });
+    playSound('scroll', { frequency: 500, duration: 0.05 });
+  }, [phase, playSound]);
+
+  const handleKeySelect = useCallback((key) => {
+    if (currentScenes[sceneIndex]?.allowClick && phase === 'intro') {
+      if (key) {
+        handleDeityClick(key);
+      }
+    }
+  }, [phase, sceneIndex, currentScenes, handleDeityClick]);
+
+  const handleKeyBack = useCallback(() => {
+    if (phase === 'deity') {
+      handleDeityBack();
+    }
+  }, [phase, handleDeityBack]);
+
+  useKeyboardNavigation({
+    onNext: scrollToNext,
+    onPrev: scrollToPrev,
+    onSelect: handleKeySelect,
+    onBack: handleKeyBack
+  });
+
+  // Touch gestures
+  const handleProjectNavigate = useCallback((direction) => {
+    if (!activeDeity) return;
+
+    let newDeity;
+    const currentIndex = PROJECT_ORDER.indexOf(activeDeity);
+
+    if (direction === 'prev') {
+      newDeity = PROJECT_ORDER[currentIndex - 1];
+    } else if (direction === 'next') {
+      newDeity = PROJECT_ORDER[currentIndex + 1];
+    } else if (PROJECT_ORDER.includes(direction)) {
+      newDeity = direction;
+    }
+
+    if (newDeity && newDeity !== activeDeity) {
+      setShowProject(false);
+      setTimeout(() => {
+        setActiveDeity(newDeity);
+        setDeityStage('env');
+        setTimeout(() => setShowProject(true), 100);
+      }, 300);
+    }
+  }, [activeDeity]);
+
+  useGestures(gestureRef, {
+    onSwipeUp: scrollToNext,
+    onSwipeDown: scrollToPrev,
+    onSwipeLeft: () => {
+      if (activeDeity) {
+        handleProjectNavigate('next');
+      }
+    },
+    onSwipeRight: () => {
+      if (activeDeity) {
+        handleProjectNavigate('prev');
+      }
+    }
+  });
+
   // ── ASSET LOADER ────────────────────────────────────────
   useEffect(() => {
     if (loadingRef.current) return;
@@ -686,14 +702,9 @@ function AppContent() {
         promises.push(new Promise(async (resolve) => {
           const padded = String(j).padStart(4, '0');
 
-          // 1. Try WebP from Cloudflare R2
-          // NOTICE: We use R2_BASE_URL instead of process.env.PUBLIC_URL
-          // And we REMOVED "/Video_assets" from the path because we uploaded contents to root
           let src = `${R2_BASE_URL}/${config.folder}/frame_${padded}.webp`;
-
           let img = await tryLoadImage(src);
 
-          // 2. Fallback JPG from R2
           if (!img) {
             src = `${R2_BASE_URL}/${config.folder}/frame_${padded}.jpg`;
             img = await tryLoadImage(src);
@@ -730,7 +741,6 @@ function AppContent() {
         setLoadError(`Failed to load: ${missingCritical.join(', ')}`);
       }
 
-      // Small delay for smooth transition
       setTimeout(() => setAllLoaded(true), 500);
     };
 
@@ -768,7 +778,6 @@ function AppContent() {
     setIsLooping(true);
     setFadeOverlay(true);
 
-    // Wait for fade out
     setTimeout(() => {
       window.scrollTo(0, 0);
       setPhase('intro');
@@ -776,7 +785,6 @@ function AppContent() {
       lastDrawnRef.current = { video: null, frame: -1 };
       drawFrame('NAME_FALL', 0);
 
-      // Fade back in
       setTimeout(() => {
         setFadeOverlay(false);
         setIsLooping(false);
@@ -812,7 +820,6 @@ function AppContent() {
             let targetFrame = scene.holdLastFrame ? frames.length - 1 : sceneProgress * (frames.length - 1);
             drawFrame(scene.video, targetFrame);
 
-            // Check for loop trigger
             if (scene.triggerLoop && sceneProgress > 0.95) {
               if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
               loopTimeoutRef.current = setTimeout(triggerLoop, 500);
@@ -856,7 +863,6 @@ function AppContent() {
     const maxFrame = frames.length - 1;
 
     if (isTrainHovered && trainFrame < maxFrame) {
-      // Track train interaction for achievement
       if (trainFrame === 0) {
         trainInteractionCountRef.current++;
         if (trainInteractionCountRef.current >= 10) {
@@ -944,31 +950,6 @@ function AppContent() {
     return () => clearInterval(interval);
   }, [phase, activeDeity, deityStage, isReversing, allLoaded, drawFrame]);
 
-  // ── HANDLERS ────────────────────────────────────────────
-  const handleDeityClick = useCallback((deity) => {
-    setActiveDeity(deity);
-    setPhase('deity');
-    setDeityStage('zoom');
-    setIsReversing(false);
-    setShowProject(false);
-    playSound('transition', { frequency: 700, duration: 0.2 });
-    setCursorType('');
-    setSrAnnouncement(`Entering ${PROJECTS[deity]?.name} project`);
-    visitedProjectsRef.current.add(deity);
-
-    // Check for explorer achievement
-    if (visitedProjectsRef.current.size === 3) {
-      unlock('EXPLORER');
-    }
-  }, [playSound, unlock]);
-
-  const handleDeityBack = useCallback(() => {
-    setShowProject(false);
-    setIsReversing(true);
-    playSound('back', { frequency: 500, duration: 0.15 });
-    setSrAnnouncement('Returning to mountain selection');
-  }, [playSound]);
-
   const handleContinueToOutro = useCallback(() => {
     setShowProject(false);
     setActiveDeity(null);
@@ -977,36 +958,11 @@ function AppContent() {
     playSound('continue', { frequency: 800, duration: 0.25 });
     setSrAnnouncement('Continuing journey to outro');
 
-    // Check for completionist if visited all projects
     const elapsedTime = (Date.now() - startTimeRef.current) / 1000;
     if (elapsedTime < 120) {
       unlock('SPEED_RUNNER');
     }
   }, [playSound, unlock]);
-
-  const handleProjectNavigate = useCallback((direction) => {
-    if (!activeDeity) return;
-
-    let newDeity;
-    const currentIndex = PROJECT_ORDER.indexOf(activeDeity);
-
-    if (direction === 'prev') {
-      newDeity = PROJECT_ORDER[currentIndex - 1];
-    } else if (direction === 'next') {
-      newDeity = PROJECT_ORDER[currentIndex + 1];
-    } else if (PROJECT_ORDER.includes(direction)) {
-      newDeity = direction;
-    }
-
-    if (newDeity && newDeity !== activeDeity) {
-      setShowProject(false);
-      setTimeout(() => {
-        setActiveDeity(newDeity);
-        setDeityStage('env');
-        setTimeout(() => setShowProject(true), 100);
-      }, 300);
-    }
-  }, [activeDeity]);
 
   // ── LOADING SCREEN ──────────────────────────────────────
   if (!allLoaded) {
@@ -1040,20 +996,12 @@ function AppContent() {
   const currentProjectIndex = activeDeity ? PROJECT_ORDER.indexOf(activeDeity) : -1;
 
   return (
-    <div ref={gestureRef} className={shake ? `screen-shake-${shake}` : ''}>
-      {/* Skip Link for Accessibility */}
+    <div ref={gestureRef}>
       <SkipLink />
-
-      {/* Screen Reader Announcements */}
       <ScreenReaderAnnouncement message={srAnnouncement} />
-
-      {/* Custom Cursor */}
       {!('ontouchstart' in window) && <CustomCursor type={cursorType} />}
+      <CinematicBars visible={phase === 'deity'} />
 
-      {/* Cinematic Bars */}
-      <CinematicBars visible={showCinematic || phase === 'deity'} />
-
-      {/* Journey Timeline */}
       {(phase === 'intro' || phase === 'outro') && (
         <JourneyTimeline
           currentPhase={phase}
@@ -1066,16 +1014,10 @@ function AppContent() {
         />
       )}
 
-      {/* Sound Toggle */}
       <SoundToggle enabled={soundEnabled} onToggle={() => setSoundEnabled(!soundEnabled)} />
-
-      {/* Achievement Notification */}
       {showNotification && <AchievementNotification achievement={showNotification} />}
-
-      {/* Orientation Warning for Mobile */}
       <OrientationWarning />
 
-      {/* Mini Map for Mobile */}
       {window.innerWidth < 768 && (phase === 'intro' || phase === 'outro') && (
         <MiniMap
           scenes={currentScenes}
@@ -1087,7 +1029,6 @@ function AppContent() {
         />
       )}
 
-      {/* Konami Code Indicator */}
       {konamiActivated && (
         <div className="konami-overlay">
           <div className="konami-stars">✨🎮✨</div>
@@ -1095,7 +1036,6 @@ function AppContent() {
         </div>
       )}
 
-      {/* Fixed Canvas */}
       <canvas
         ref={canvasRef}
         style={{
@@ -1110,16 +1050,11 @@ function AppContent() {
         }}
       />
 
-      {/* Scroll Container */}
       <div style={{ position: 'relative', zIndex: 2, height: totalScrollHeight, pointerEvents: 'none' }} />
 
-      {/* Fade Overlay for Loop */}
       <div className={`fade-overlay ${fadeOverlay ? 'active' : ''}`} />
 
-      {/* UI Overlay */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 10, pointerEvents: 'none' }}>
-
-        {/* INTRO PHASE */}
         {phase === 'intro' && (
           <>
             {currentScenes[sceneIndex]?.overlay === 'hero' && (
@@ -1192,7 +1127,6 @@ function AppContent() {
           </>
         )}
 
-        {/* DEITY PHASE */}
         {phase === 'deity' && (
           <>
             <button
@@ -1216,7 +1150,6 @@ function AppContent() {
           </>
         )}
 
-        {/* OUTRO PHASE */}
         {phase === 'outro' && (
           <>
             {currentScenes[sceneIndex]?.showParticles && <ParticleContact />}
@@ -1259,26 +1192,22 @@ function AppContent() {
         )}
       </div>
 
-      {/* PROJECT PANEL */}
-      {
-        showProject && activeDeity && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 100, pointerEvents: 'auto' }}>
-            <ProjectPanel
-              project={PROJECTS[activeDeity]}
-              onClose={handleDeityBack}
-              onContinue={handleContinueToOutro}
-              onNavigate={handleProjectNavigate}
-              canGoPrev={currentProjectIndex > 0}
-              canGoNext={currentProjectIndex < PROJECT_ORDER.length - 1}
-            />
-          </div>
-        )
-      }
-    </div >
+      {showProject && activeDeity && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, pointerEvents: 'auto' }}>
+          <ProjectPanel
+            project={PROJECTS[activeDeity]}
+            onClose={handleDeityBack}
+            onContinue={handleContinueToOutro}
+            onNavigate={handleProjectNavigate}
+            canGoPrev={currentProjectIndex > 0}
+            canGoNext={currentProjectIndex < PROJECT_ORDER.length - 1}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
-// Wrap with Error Boundary
 export default function App() {
   return (
     <PortfolioErrorBoundary>
