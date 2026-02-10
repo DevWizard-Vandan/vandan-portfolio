@@ -6,7 +6,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Github, Linkedin, Mail, FileText, ChevronDown, ArrowRight, ArrowLeft, ExternalLink } from 'lucide-react';
 import './App.css';
-const R2_BASE_URL = "https://pub-3e38bbb0c6cf4dedbcb0737064924fb2.r2.dev";
 import './enhancements.css';
 
 // Import custom hooks
@@ -38,6 +37,7 @@ import {
   PortfolioErrorBoundary
 } from './components';
 
+const R2_BASE_URL = "https://pub-3e38bbb0c6cf4dedbcb0737064924fb2.r2.dev";
 // ─────────────────────────────────────────────────────────────
 // 1. ASSET CONFIGURATION
 // ─────────────────────────────────────────────────────────────
