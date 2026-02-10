@@ -1,76 +1,59 @@
 // ============================================================
 // FILE: src/App.js
-// Version: Enhanced v2 - Full Accessibility, Interactivity & Polish
+// Version: Progressive Streaming (Complete Implementation)
 // ============================================================
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Github, ChevronDown, ArrowRight, ArrowLeft, ExternalLink, FileText } from 'lucide-react';
 import './App.css';
-import './enhancements.css';
 
-// Import custom hooks
-import {
-  useKeyboardNavigation,
-  useGestures,
-  useSoundEffects,
-  useAchievements,
-  useKonamiCode,
-  useColorTheme,
-  useConsoleMessage
-} from './hooks';
-
-// Import components
-import {
-  SkipLink,
-  ScreenReaderAnnouncement,
-  JourneyTimeline,
-  CustomCursor,
-  CinematicBars,
-  AchievementNotification,
-  SoundToggle,
-  OrientationWarning,
-  MiniMap,
-  PortfolioErrorBoundary
-} from './components';
-
-const R2_BASE_URL = "https://pub-3e38bbb0c6cf4dedbcb0737064924fb2.r2.dev";
 // ─────────────────────────────────────────────────────────────
-// 1. ASSET CONFIGURATION
+// 1. CONFIGURATION
 // ─────────────────────────────────────────────────────────────
+const R2_BASE_URL = "https://pub-929342777f974737b83d97e3f2832344.r2.dev";
+
 const VIDEOS = {
   NAME_FALL: { folder: 'Video_1_Name_Fall', frames: 144 },
   TRAIN_SMASHING: { folder: 'Video_2_Train_Smashing', frames: 144 },
   TRAIN_INTERACTION: { folder: 'Video_3_Train_Interaction', frames: 62 },
   TRAIN_EXIT: { folder: 'Video_4_Train_Exit', frames: 144 },
   MOUNTAIN_ZOOM: { folder: 'Video_5_Mountain_Zoom', frames: 144 },
-
   BRAHMA_ZOOM: { folder: 'Video_6_Brahma_Zoom', frames: 144 },
   SHIVA_ZOOM: { folder: 'Video_7_Shiva_Zoom', frames: 144 },
   VISHNU_ZOOM: { folder: 'Video_8_Vishnu_Zoom', frames: 144 },
-
   BRAHMA_HOVER: { folder: 'Video_9_Hovering_Brahma_Interaction', frames: 144 },
   SHIVA_HOVER: { folder: 'Video_10_Hovering_Shiva_Interaction', frames: 144 },
   VISHNU_HOVER: { folder: 'Video_11_Hovering_Vishnu_Interaction', frames: 144 },
-
   BRAHMA_TO_PROJECT: { folder: 'Video_12_Brahma_to_MiniDrive', frames: 144 },
   SHIVA_TO_PROJECT: { folder: 'Video_13_Shiva_to_Titan', frames: 144 },
   VISHNU_TO_PROJECT: { folder: 'Video_14_Vishnu_to_Vajra', frames: 144 },
-
   MINIDRIVE_ENV: { folder: 'Video_15_MiniDrive_Environment', frames: 144 },
   TITAN_ENV: { folder: 'Video_16_Titan_Environment', frames: 144 },
   VAJRA_ENV: { folder: 'Video_17_Vajra_Environment', frames: 144 },
-
   MOUNTAIN_TO_SKY: { folder: 'Video_19_Mountain_to_Sky', frames: 144 },
   STARS_GLOW: { folder: 'Video_20_Star_Glow', frames: 144 },
   TRAIN_AT_REST: { folder: 'Video_21_Train_at_Rest', frames: 144 },
-
   RESUME_UNFOLD: { folder: 'Video_22_Resume_Unfold', frames: 144 },
   RESUME_FOLD: { folder: 'Video_23_Resume_Unfold_Rev', frames: 144 },
   FINAL_DEPARTURE: { folder: 'Video_24_Final_Departure', frames: 144 },
 };
 
+// Priority queues for progressive loading
+const CRITICAL_VIDEOS = ['NAME_FALL'];
+const INTRO_VIDEOS = ['TRAIN_SMASHING', 'TRAIN_INTERACTION', 'TRAIN_EXIT', 'MOUNTAIN_ZOOM'];
+const DEITY_VIDEOS = [
+  'BRAHMA_ZOOM', 'SHIVA_ZOOM', 'VISHNU_ZOOM',
+  'BRAHMA_HOVER', 'SHIVA_HOVER', 'VISHNU_HOVER',
+  'BRAHMA_TO_PROJECT', 'SHIVA_TO_PROJECT', 'VISHNU_TO_PROJECT',
+  'MINIDRIVE_ENV', 'TITAN_ENV', 'VAJRA_ENV'
+];
+const OUTRO_VIDEOS = [
+  'MOUNTAIN_TO_SKY', 'STARS_GLOW', 'TRAIN_AT_REST',
+  'RESUME_UNFOLD', 'RESUME_FOLD', 'FINAL_DEPARTURE'
+];
+
 // ─────────────────────────────────────────────────────────────
-// 2. SCROLL SCENES TIMELINE
+// 2. SCENE DEFINITIONS
 // ─────────────────────────────────────────────────────────────
 const INTRO_SCENES = [
   { id: 'name_fall', video: 'NAME_FALL', scrollHeight: 1200, overlay: 'hero' },
@@ -84,41 +67,44 @@ const INTRO_SCENES = [
 const OUTRO_SCENES = [
   { id: 'mountain_to_sky', video: 'MOUNTAIN_TO_SKY', scrollHeight: 1200 },
   { id: 'stars_glow', video: 'STARS_GLOW', scrollHeight: 800 },
-  { id: 'sky_contact', video: 'STARS_GLOW', scrollHeight: 1200, holdLastFrame: true, showParticles: true },
+  { id: 'sky_contact', video: 'STARS_GLOW', scrollHeight: 1200, holdLastFrame: true, showContact: true },
   { id: 'train_at_rest', video: 'TRAIN_AT_REST', scrollHeight: 1200, allowHover: true },
   { id: 'resume_unfold', video: 'RESUME_UNFOLD', scrollHeight: 1200 },
-  { id: 'resume_view', video: 'RESUME_UNFOLD', scrollHeight: 600, holdLastFrame: true, showResumeClick: true },
+  { id: 'resume_view', video: 'RESUME_UNFOLD', scrollHeight: 600, holdLastFrame: true, showResume: true },
   { id: 'resume_fold', video: 'RESUME_FOLD', scrollHeight: 1200 },
   { id: 'final_departure', video: 'FINAL_DEPARTURE', scrollHeight: 1200, triggerLoop: true },
 ];
 
 const PROJECTS = {
   brahma: {
-    key: 'brahma', name: 'MiniDrive', deity: 'Brahma', tagline: 'Hybrid Cloud Storage',
-    quote: 'Creating Data Realms', color: '#fbbf24', icon: '🔱',
+    key: 'brahma', name: 'MiniDrive', deity: 'Brahma',
+    tagline: 'Hybrid Cloud Storage', quote: 'Creating Data Realms',
+    color: '#fbbf24', icon: '🔱',
     zoomVideo: 'BRAHMA_ZOOM', hoverVideo: 'BRAHMA_HOVER',
     transformVideo: 'BRAHMA_TO_PROJECT', envVideo: 'MINIDRIVE_ENV',
-    description: 'A sophisticated cloud storage solution combining MinIO object storage with PostgreSQL metadata management. Features block-level deduplication achieving 40% storage reduction.',
+    description: 'A sophisticated cloud storage solution combining MinIO object storage with PostgreSQL metadata management.',
     stack: ['Java', 'Spring Boot', 'MinIO', 'PostgreSQL', 'Redis', 'Docker'],
     github: 'https://github.com/DevWizard-Vandan',
     features: ['Block-level deduplication', 'Hybrid cloud architecture', 'Real-time sync', 'End-to-end encryption']
   },
   shiva: {
-    key: 'shiva', name: 'Titan', deity: 'Shiva', tagline: 'HFT Matching Engine',
-    quote: 'Orchestrating Market Chaos', color: '#00d9ff', icon: '⚡',
+    key: 'shiva', name: 'Titan', deity: 'Shiva',
+    tagline: 'HFT Matching Engine', quote: 'Orchestrating Market Chaos',
+    color: '#00d9ff', icon: '⚡',
     zoomVideo: 'SHIVA_ZOOM', hoverVideo: 'SHIVA_HOVER',
     transformVideo: 'SHIVA_TO_PROJECT', envVideo: 'TITAN_ENV',
-    description: 'Ultra low-latency matching engine built in Rust, achieving 12.8M matches/sec with sub-microsecond latency. Designed for high-frequency trading environments.',
+    description: 'Ultra low-latency matching engine built in Rust, achieving 12.8M matches/sec with sub-microsecond latency.',
     stack: ['Rust', 'Lock-Free DS', 'SPSC Ring', 'SIMD', 'io_uring'],
     github: 'https://github.com/DevWizard-Vandan',
     features: ['12.8M matches/sec', 'Sub-μs latency', 'Lock-free architecture', 'Zero-copy networking']
   },
   vishnu: {
-    key: 'vishnu', name: 'Vajra', deity: 'Vishnu', tagline: 'Distributed Vector DB',
-    quote: 'Preserving Data Eternally', color: '#60a5fa', icon: '💎',
+    key: 'vishnu', name: 'Vajra', deity: 'Vishnu',
+    tagline: 'Distributed Vector DB', quote: 'Preserving Data Eternally',
+    color: '#60a5fa', icon: '💎',
     zoomVideo: 'VISHNU_ZOOM', hoverVideo: 'VISHNU_HOVER',
     transformVideo: 'VISHNU_TO_PROJECT', envVideo: 'VAJRA_ENV',
-    description: 'Distributed Vector Database with custom Raft consensus implementation and HNSW indexing. Optimized for AI/ML embedding storage and similarity search.',
+    description: 'Distributed Vector Database with custom Raft consensus implementation and HNSW indexing.',
     stack: ['Rust', 'Raft Consensus', 'HNSW', 'gRPC', 'RocksDB'],
     github: 'https://github.com/DevWizard-Vandan',
     features: ['Custom Raft implementation', 'HNSW indexing', 'Horizontal scaling', 'Strong consistency']
@@ -127,273 +113,106 @@ const PROJECTS = {
 
 const PROJECT_ORDER = ['brahma', 'shiva', 'vishnu'];
 
-const LOADING_HINTS = [
-  "Initializing the cosmic journey...",
-  "Loading divine frameworks...",
-  "Preparing visual experiences...",
-  "Assembling the train of innovation...",
-  "Crafting mountain landscapes...",
-  "Synchronizing timelines...",
-  "Almost ready for departure..."
-];
+// ─────────────────────────────────────────────────────────────
+// 3. UTILITY FUNCTIONS
+// ─────────────────────────────────────────────────────────────
+const runIdle = (cb) => {
+  if (typeof window.requestIdleCallback !== 'undefined') {
+    return window.requestIdleCallback(cb);
+  }
+  return setTimeout(cb, 50);
+};
+
+const cancelIdle = (id) => {
+  if (typeof window.cancelIdleCallback !== 'undefined') {
+    window.cancelIdleCallback(id);
+  } else {
+    clearTimeout(id);
+  }
+};
+
+const loadSingleImage = (src) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+};
+
+const getInterpolatedFrame = (frames, targetIndex) => {
+  if (!frames || frames.length === 0) return null;
+
+  const safeIndex = Math.max(0, Math.min(Math.floor(targetIndex), frames.length - 1));
+
+  if (frames[safeIndex]) return frames[safeIndex];
+
+  // Nearest neighbor search for sparse arrays
+  let left = safeIndex;
+  while (left >= 0 && !frames[left]) left--;
+
+  let right = safeIndex;
+  while (right < frames.length && !frames[right]) right++;
+
+  if (left >= 0 && right < frames.length) {
+    return (safeIndex - left <= right - safeIndex) ? frames[left] : frames[right];
+  }
+
+  return frames[left] ?? frames[right] ?? null;
+};
 
 // ─────────────────────────────────────────────────────────────
-// 3. ENHANCED LOADING SCREEN
+// 4. LOADING SCREEN COMPONENT
 // ─────────────────────────────────────────────────────────────
-const LoadingScreen = ({ progress, currentItem, loadedVideos, totalVideos }) => {
-  const [hintIndex, setHintIndex] = useState(0);
-  const [particles, setParticles] = useState([]);
-  const trainPosition = progress * 100;
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setHintIndex(i => (i + 1) % LOADING_HINTS.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const newParticles = Array.from({ length: 50 }, (_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      delay: Math.random() * 5,
-      duration: 3 + Math.random() * 4,
-      size: 2 + Math.random() * 3,
-      opacity: 0.3 + Math.random() * 0.5
-    }));
-    setParticles(newParticles);
-  }, []);
-
+const LoadingScreen = ({ progress, stage }) => {
   return (
     <div className="loading-screen">
-      <div className="loading-bg">
-        <div className="loading-gradient-orb orb-1" />
-        <div className="loading-gradient-orb orb-2" />
-        <div className="loading-gradient-orb orb-3" />
-      </div>
-
-      <div className="loading-particles">
-        {particles.map(p => (
-          <div
-            key={p.id}
-            className="loading-particle"
-            style={{
-              left: `${p.left}%`,
-              animationDelay: `${p.delay}s`,
-              animationDuration: `${p.duration}s`,
-              width: `${p.size}px`,
-              height: `${p.size}px`,
-              opacity: p.opacity
-            }}
-          />
-        ))}
-      </div>
-
       <div className="loading-content">
         <div className="loading-brand">
           <span className="loading-logo">VS</span>
           <span className="loading-brand-text">VANDAN SHARMA</span>
         </div>
 
-        <div className="loading-train-section">
-          <div className="loading-track">
-            <div className="loading-track-line" />
-            <div className="loading-track-ties">
-              {Array.from({ length: 20 }, (_, i) => (
-                <div key={i} className="loading-tie" />
-              ))}
-            </div>
-          </div>
-          <div
-            className="loading-train"
-            style={{ left: `${Math.min(trainPosition, 85)}%` }}
-          >
-            <span className="train-emoji">🚂</span>
-            <div className="train-smoke">
-              <span>💨</span>
-              <span>💨</span>
-              <span>💨</span>
-            </div>
-          </div>
-        </div>
-
         <div className="loading-progress-section">
           <div className="loading-bar-container">
-            <div className="loading-bar-bg" />
-            <div
-              className="loading-bar"
-              style={{ width: `${progress * 100}%` }}
-            >
-              <div className="loading-bar-shine" />
-            </div>
-            <div
-              className="loading-bar-glow"
-              style={{ width: `${progress * 100}%` }}
-            />
+            <div className="loading-bar" style={{ width: `${progress * 100}%` }} />
           </div>
-
           <div className="loading-stats">
             <span className="loading-percentage">{Math.round(progress * 100)}%</span>
-            <span className="loading-count">{loadedVideos}/{totalVideos} scenes</span>
+            <span className="loading-stage">{stage}</span>
           </div>
         </div>
 
-        <div className="loading-current">
-          <div className="loading-spinner" />
-          <span>{currentItem || 'Preparing...'}</span>
-        </div>
-
-        <p className="loading-hint" key={hintIndex}>
-          {LOADING_HINTS[hintIndex]}
-        </p>
-
-        <div className="loading-footer">
-          <span>Systems Engineer Portfolio</span>
-          <span className="loading-dot">•</span>
-          <span>2024</span>
-        </div>
+        <p className="loading-hint">Preparing your journey...</p>
       </div>
     </div>
   );
 };
 
 // ─────────────────────────────────────────────────────────────
-// 4. PHYSICS PARTICLES COMPONENT
-// ─────────────────────────────────────────────────────────────
-const ParticleContact = () => {
-  const canvasRef = useRef(null);
-  const particlesRef = useRef([]);
-  const mouseRef = useRef({ x: -1000, y: -1000 });
-  const iconsRef = useRef([]);
-
-  useEffect(() => {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    iconsRef.current = [
-      { label: 'GitHub', cx: w * 0.25, cy: h * 0.5, color: '#fff', href: 'https://github.com/DevWizard-Vandan', icon: '⚡' },
-      { label: 'LinkedIn', cx: w * 0.5, cy: h * 0.5, color: '#0077b5', href: 'https://linkedin.com/in/vandan-sharma-682536330', icon: '💼' },
-      { label: 'Email', cx: w * 0.75, cy: h * 0.5, color: '#ea4335', href: 'mailto:vandan.sharma06@gmail.com', icon: '✉️' },
-    ];
-
-    const particles = [];
-    iconsRef.current.forEach((icon) => {
-      for (let i = 0; i < 80; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = 20 + Math.random() * 50;
-        const tx = icon.cx + Math.cos(angle) * radius;
-        const ty = icon.cy + Math.sin(angle) * radius;
-        particles.push({
-          x: tx, y: ty, homeX: tx, homeY: ty, vx: 0, vy: 0,
-          color: icon.color, size: 1 + Math.random() * 3,
-          iconIndex: iconsRef.current.indexOf(icon)
-        });
-      }
-    });
-    particlesRef.current = particles;
-
-    const handleMove = (e) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
-    window.addEventListener('mousemove', handleMove);
-    return () => window.removeEventListener('mousemove', handleMove);
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    let raf;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const mx = mouseRef.current.x;
-      const my = mouseRef.current.y;
-
-      particlesRef.current.forEach(p => {
-        const dx = p.x - mx;
-        const dy = p.y - my;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < 150) {
-          const f = (150 - dist) / 150;
-          p.vx += (dx / dist) * f * 4;
-          p.vy += (dy / dist) * f * 4;
-        }
-
-        p.vx += (p.homeX - p.x) * 0.04;
-        p.vy += (p.homeY - p.y) * 0.04;
-        p.vx *= 0.92;
-        p.vy *= 0.92;
-        p.x += p.vx;
-        p.y += p.vy;
-
-        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
-        gradient.addColorStop(0, p.color);
-        gradient.addColorStop(1, 'transparent');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      ctx.textAlign = 'center';
-      ctx.font = 'bold 18px system-ui';
-      iconsRef.current.forEach(icon => {
-        ctx.font = '32px system-ui';
-        ctx.fillText(icon.icon, icon.cx, icon.cy - 70);
-
-        ctx.font = 'bold 16px system-ui';
-        ctx.fillStyle = icon.color;
-        ctx.fillText(icon.label, icon.cx, icon.cy + 90);
-
-        ctx.font = '12px system-ui';
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.fillText('Click to connect', icon.cx, icon.cy + 110);
-      });
-
-      raf = requestAnimationFrame(animate);
-    };
-    animate();
-
-    const handleClick = (e) => {
-      iconsRef.current.forEach(icon => {
-        const d = Math.sqrt(Math.pow(e.clientX - icon.cx, 2) + Math.pow(e.clientY - icon.cy, 2));
-        if (d < 100) window.open(icon.href, '_blank');
-      });
-    };
-    window.addEventListener('click', handleClick);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('click', handleClick);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="particle-canvas" />;
-};
-
-// ─────────────────────────────────────────────────────────────
-// 5. ENHANCED PROJECT PANEL WITH NAVIGATION
+// 5. PROJECT PANEL COMPONENT
 // ─────────────────────────────────────────────────────────────
 const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, canGoNext }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setTimeout(() => setIsVisible(true), 50);
+    const timer = setTimeout(() => setIsVisible(true), 50);
+    return () => clearTimeout(timer);
   }, []);
+
+  if (!project) return null;
 
   return (
     <div className={`modal-overlay ${isVisible ? 'visible' : ''}`}>
       <div className="project-panel" style={{ '--accent': project.color }}>
+        {/* Navigation Arrows */}
         <button
           className={`project-nav-arrow prev ${canGoPrev ? '' : 'disabled'}`}
           onClick={() => canGoPrev && onNavigate('prev')}
           disabled={!canGoPrev}
+          aria-label="Previous project"
         >
           <ArrowLeft size={24} />
         </button>
@@ -401,27 +220,32 @@ const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, can
           className={`project-nav-arrow next ${canGoNext ? '' : 'disabled'}`}
           onClick={() => canGoNext && onNavigate('next')}
           disabled={!canGoNext}
+          aria-label="Next project"
         >
           <ArrowRight size={24} />
         </button>
 
         <div className="project-content">
+          {/* Header */}
           <div className="project-header">
             <div className="project-deity-badge">
               <span className="project-icon">{project.icon}</span>
               <span className="project-deity-name">{project.deity}</span>
             </div>
-            <button className="project-close" onClick={onClose}>✕</button>
+            <button className="project-close" onClick={onClose} aria-label="Close">✕</button>
           </div>
 
+          {/* Title */}
           <div className="project-title-section">
             <h1 className="project-name">{project.name}</h1>
             <p className="project-tagline">{project.tagline}</p>
             <p className="project-quote">"{project.quote}"</p>
           </div>
 
+          {/* Description */}
           <p className="project-description">{project.description}</p>
 
+          {/* Features */}
           <div className="project-section">
             <h3>KEY FEATURES</h3>
             <div className="project-features">
@@ -434,6 +258,7 @@ const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, can
             </div>
           </div>
 
+          {/* Tech Stack */}
           <div className="project-section">
             <h3>TECH STACK</h3>
             <div className="stack-tags">
@@ -443,6 +268,7 @@ const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, can
             </div>
           </div>
 
+          {/* Dots Navigation */}
           <div className="project-dots">
             {PROJECT_ORDER.map((key) => (
               <button
@@ -450,10 +276,12 @@ const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, can
                 className={`project-dot ${key === project.key ? 'active' : ''}`}
                 onClick={() => onNavigate(key)}
                 style={{ '--dot-color': PROJECTS[key].color }}
+                aria-label={`Go to ${PROJECTS[key].name}`}
               />
             ))}
           </div>
 
+          {/* Actions */}
           <div className="project-actions">
             <button onClick={onClose} className="action-back">
               <ArrowLeft size={16} />
@@ -485,24 +313,21 @@ const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, can
 // ─────────────────────────────────────────────────────────────
 // 6. MAIN APP COMPONENT
 // ─────────────────────────────────────────────────────────────
-function AppContent() {
+export default function App() {
   const canvasRef = useRef(null);
-  const gestureRef = useRef(null);
   const frameBankRef = useRef({});
   const loadingRef = useRef(false);
   const lastDrawnRef = useRef({ video: null, frame: -1 });
   const loopTimeoutRef = useRef(null);
-  const trainInteractionCountRef = useRef(0);
-  const startTimeRef = useRef(Date.now());
-  const visitedProjectsRef = useRef(new Set());
+  const trainFrameRef = useRef(0);
 
+  // Loading State
   const [loadProgress, setLoadProgress] = useState(0);
-  const [loadingItem, setLoadingItem] = useState('');
-  const [loadedVideos, setLoadedVideos] = useState(0);
-  const [totalVideos] = useState(Object.keys(VIDEOS).length);
-  const [allLoaded, setAllLoaded] = useState(false);
-  const [loadError, setLoadError] = useState(null);
+  const [loadStage, setLoadStage] = useState('Initializing...');
+  const [criticalLoaded, setCriticalLoaded] = useState(false);
+  const [introLoaded, setIntroLoaded] = useState(false);
 
+  // App State
   const [phase, setPhase] = useState('intro');
   const [sceneIndex, setSceneIndex] = useState(0);
   const [activeDeity, setActiveDeity] = useState(null);
@@ -510,50 +335,120 @@ function AppContent() {
   const [showProject, setShowProject] = useState(false);
   const [isReversing, setIsReversing] = useState(false);
   const [isTrainHovered, setIsTrainHovered] = useState(false);
-  const [trainFrame, setTrainFrame] = useState(0);
-  const [isLooping, setIsLooping] = useState(false);
   const [fadeOverlay, setFadeOverlay] = useState(false);
-  const [cursorType, setCursorType] = useState('');
-  const [konamiActivated, setKonamiActivated] = useState(false);
-  const [srAnnouncement, setSrAnnouncement] = useState('');
 
-  const currentScenes = phase === 'intro' ? INTRO_SCENES : OUTRO_SCENES;
+  const currentScenes = useMemo(() =>
+    phase === 'intro' ? INTRO_SCENES : OUTRO_SCENES
+    , [phase]);
 
-  // ── CUSTOM HOOKS ────────────────────────────────────────
-  const { enabled: soundEnabled, setEnabled: setSoundEnabled, playSound } = useSoundEffects();
-  const { unlock, showNotification } = useAchievements();
+  const totalScrollHeight = useMemo(() =>
+    currentScenes.reduce((acc, scene) => acc + scene.scrollHeight, 0) + window.innerHeight
+    , [currentScenes]);
 
-  useConsoleMessage();
+  // ─────────────────────────────────────────────────────────────
+  // 7. PROGRESSIVE ASSET LOADER
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
 
-  const currentSceneKey = currentScenes[sceneIndex]?.id || 'name_fall';
-  useColorTheme(currentSceneKey);
+    const loadBatch = async (keys, step = 1, concurrent = 6) => {
+      for (const key of keys) {
+        const config = VIDEOS[key];
+        if (!config) continue;
 
-  useKonamiCode(() => {
-    setKonamiActivated(true);
-    unlock('KONAMI');
-    playSound('success', { frequency: 880, duration: 0.3 });
-    setTimeout(() => setKonamiActivated(false), 5000);
-  });
+        if (!frameBankRef.current[key]) {
+          frameBankRef.current[key] = new Array(config.frames).fill(null);
+        }
 
-  // ── DRAW FRAME FUNCTION ─────────────────────────────────
+        // Create batches for concurrent loading
+        const frameNumbers = [];
+        for (let j = 1; j <= config.frames; j += step) {
+          if (!frameBankRef.current[key][j - 1]) {
+            frameNumbers.push(j);
+          }
+        }
+
+        // Process in chunks
+        for (let i = 0; i < frameNumbers.length; i += concurrent) {
+          const chunk = frameNumbers.slice(i, i + concurrent);
+          await Promise.all(
+            chunk.map(async (j) => {
+              const padded = String(j).padStart(4, '0');
+              const src = `${R2_BASE_URL}/${config.folder}/frame_${padded}.webp`;
+              const img = await loadSingleImage(src);
+              if (img) {
+                frameBankRef.current[key][j - 1] = img;
+              }
+            })
+          );
+        }
+      }
+    };
+
+    const initLoad = async () => {
+      // Phase 1: Critical (blocks UI)
+      setLoadStage('Loading essential assets...');
+      await loadBatch(CRITICAL_VIDEOS, 1, 10);
+      setLoadProgress(0.15);
+      setCriticalLoaded(true);
+
+      // Phase 2: Intro (sparse first, then fill)
+      setLoadStage('Preparing introduction...');
+      await loadBatch(INTRO_VIDEOS, 4, 8);
+      setLoadProgress(0.4);
+      setIntroLoaded(true);
+
+      // Phase 3: Deity videos (sparse)
+      setLoadStage('Loading project scenes...');
+      await loadBatch(DEITY_VIDEOS, 8, 6);
+      setLoadProgress(0.65);
+
+      // Phase 4: Outro videos (sparse)
+      setLoadStage('Preparing finale...');
+      await loadBatch(OUTRO_VIDEOS, 8, 6);
+      setLoadProgress(0.8);
+
+      // Phase 5: Background fill (non-blocking)
+      setLoadStage('Optimizing...');
+
+      const fillGaps = async () => {
+        const allKeys = [...INTRO_VIDEOS, ...DEITY_VIDEOS, ...OUTRO_VIDEOS];
+        for (let i = 0; i < allKeys.length; i++) {
+          await loadBatch([allKeys[i]], 1, 4);
+          setLoadProgress(0.8 + (0.2 * (i + 1) / allKeys.length));
+          // Yield to main thread
+          await new Promise(r => setTimeout(r, 10));
+        }
+        setLoadStage('Complete');
+      };
+
+      runIdle(fillGaps);
+    };
+
+    initLoad();
+  }, []);
+
+  // ─────────────────────────────────────────────────────────────
+  // 8. DRAWING ENGINE
+  // ─────────────────────────────────────────────────────────────
   const drawFrame = useCallback((videoKey, frameIdx) => {
     const canvas = canvasRef.current;
     if (!canvas) return false;
 
     const frames = frameBankRef.current[videoKey];
-    if (!frames || frames.length === 0) return false;
-
-    const safeIndex = Math.max(0, Math.min(Math.floor(frameIdx), frames.length - 1));
-    const img = frames[safeIndex];
+    const img = getInterpolatedFrame(frames, frameIdx);
 
     if (!img || !img.complete || img.naturalWidth === 0) return false;
 
+    const safeIndex = Math.floor(frameIdx);
     if (lastDrawnRef.current.video === videoKey && lastDrawnRef.current.frame === safeIndex) {
-      return true;
+      return true; // Already drawn, skip
     }
 
     const ctx = canvas.getContext('2d', { alpha: false });
 
+    // Cover fit calculation
     const imgRatio = img.naturalWidth / img.naturalHeight;
     const canvasRatio = canvas.width / canvas.height;
     let dw, dh, dx, dy;
@@ -578,74 +473,253 @@ function AppContent() {
     return true;
   }, []);
 
-  // ── DEITY HANDLERS (defined before hooks that use them) ──
+  // ─────────────────────────────────────────────────────────────
+  // 9. CANVAS SETUP
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const setupCanvas = () => {
+      if (canvasRef.current) {
+        canvasRef.current.width = window.innerWidth;
+        canvasRef.current.height = window.innerHeight;
+        lastDrawnRef.current.frame = -1; // Force redraw
+        if (criticalLoaded) {
+          drawFrame('NAME_FALL', 0);
+        }
+      }
+    };
+
+    setupCanvas();
+    window.addEventListener('resize', setupCanvas);
+    return () => window.removeEventListener('resize', setupCanvas);
+  }, [criticalLoaded, drawFrame]);
+
+  // Initial paint
+  useEffect(() => {
+    if (criticalLoaded) {
+      drawFrame('NAME_FALL', 0);
+    }
+  }, [criticalLoaded, drawFrame]);
+
+  // ─────────────────────────────────────────────────────────────
+  // 10. LOOP HANDLER
+  // ─────────────────────────────────────────────────────────────
+  const triggerLoop = useCallback(() => {
+    setFadeOverlay(true);
+
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      setPhase('intro');
+      setSceneIndex(0);
+      lastDrawnRef.current = { video: null, frame: -1 };
+      drawFrame('NAME_FALL', 0);
+
+      setTimeout(() => setFadeOverlay(false), 300);
+    }, 500);
+  }, [drawFrame]);
+
+  // ─────────────────────────────────────────────────────────────
+  // 11. SCROLL HANDLER
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!criticalLoaded || phase === 'deity') return;
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const scenes = phase === 'intro' ? INTRO_SCENES : OUTRO_SCENES;
+      let accumulatedHeight = 0;
+
+      for (let i = 0; i < scenes.length; i++) {
+        const scene = scenes[i];
+        const sceneStart = accumulatedHeight;
+        const sceneEnd = accumulatedHeight + scene.scrollHeight;
+
+        if (scrollY < sceneEnd || i === scenes.length - 1) {
+          setSceneIndex(i);
+
+          const sceneProgress = Math.max(0, Math.min(1, (scrollY - sceneStart) / scene.scrollHeight));
+          const config = VIDEOS[scene.video];
+          const maxFrame = config ? config.frames - 1 : 143;
+
+          // Skip drawing if train is being hovered
+          if ((scene.id === 'train_idle' || scene.id === 'train_at_rest') && isTrainHovered) {
+            break;
+          }
+
+          const targetFrame = scene.holdLastFrame ? maxFrame : sceneProgress * maxFrame;
+          drawFrame(scene.video, targetFrame);
+
+          // Handle loop trigger
+          if (scene.triggerLoop && sceneProgress > 0.95) {
+            if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
+            loopTimeoutRef.current = setTimeout(triggerLoop, 500);
+          }
+
+          break;
+        }
+        accumulatedHeight += scene.scrollHeight;
+      }
+    };
+
+    let rafId;
+    const throttledScroll = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(handleScroll);
+    };
+
+    window.addEventListener('scroll', throttledScroll, { passive: true });
+    handleScroll(); // Initial call
+
+    return () => {
+      window.removeEventListener('scroll', throttledScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+      if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
+    };
+  }, [criticalLoaded, phase, isTrainHovered, drawFrame, triggerLoop]);
+
+  // ─────────────────────────────────────────────────────────────
+  // 12. TRAIN HOVER ANIMATION
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!criticalLoaded) return;
+
+    const currentScene = currentScenes[sceneIndex];
+    if (!currentScene?.allowHover) {
+      trainFrameRef.current = 0;
+      return;
+    }
+
+    const frames = frameBankRef.current['TRAIN_INTERACTION'];
+    if (!frames?.length) return;
+
+    const maxFrame = Math.min(frames.length - 1, 61);
+    let animationId;
+
+    const animate = () => {
+      const currentFrame = trainFrameRef.current;
+
+      if (isTrainHovered && currentFrame < maxFrame) {
+        trainFrameRef.current = Math.min(currentFrame + 1, maxFrame);
+        drawFrame('TRAIN_INTERACTION', trainFrameRef.current);
+        animationId = setTimeout(animate, 30);
+      } else if (!isTrainHovered && currentFrame > 0) {
+        trainFrameRef.current = Math.max(currentFrame - 2, 0);
+        if (trainFrameRef.current > 0) {
+          drawFrame('TRAIN_INTERACTION', trainFrameRef.current);
+          animationId = setTimeout(animate, 20);
+        } else {
+          // Return to base video
+          const scene = currentScenes[sceneIndex];
+          if (scene) {
+            lastDrawnRef.current.frame = -1;
+            const config = VIDEOS[scene.video];
+            drawFrame(scene.video, config ? config.frames - 1 : 143);
+          }
+        }
+      }
+    };
+
+    animate();
+    return () => clearTimeout(animationId);
+  }, [criticalLoaded, isTrainHovered, sceneIndex, currentScenes, drawFrame]);
+
+  // ─────────────────────────────────────────────────────────────
+  // 13. DEITY ANIMATION LOOP
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (phase !== 'deity' || !activeDeity || !criticalLoaded) return;
+
+    const project = PROJECTS[activeDeity];
+    if (!project) return;
+
+    let videoKey;
+    let shouldLoop = false;
+
+    if (deityStage === 'zoom') videoKey = project.zoomVideo;
+    else if (deityStage === 'hover') { videoKey = project.hoverVideo; shouldLoop = true; }
+    else if (deityStage === 'transform') videoKey = project.transformVideo;
+    else if (deityStage === 'env') { videoKey = project.envVideo; shouldLoop = true; }
+
+    const frames = frameBankRef.current[videoKey];
+    if (!frames) return;
+
+    const maxFrame = frames.length - 1;
+    let currentFrame = isReversing ? maxFrame : 0;
+    let intervalId;
+
+    const advanceFrame = () => {
+      if (isReversing) {
+        currentFrame--;
+        if (currentFrame < 0) {
+          clearInterval(intervalId);
+
+          if (deityStage === 'env') setDeityStage('transform');
+          else if (deityStage === 'transform') setDeityStage('zoom');
+          else if (deityStage === 'zoom') {
+            setIsReversing(false);
+            setActiveDeity(null);
+            setPhase('intro');
+            const scrollTarget = INTRO_SCENES.slice(0, 5).reduce((a, s) => a + s.scrollHeight, 0);
+            window.scrollTo(0, scrollTarget);
+          }
+          return;
+        }
+      } else {
+        currentFrame++;
+        if (currentFrame > maxFrame) {
+          if (shouldLoop) {
+            currentFrame = 0;
+          } else {
+            clearInterval(intervalId);
+            if (deityStage === 'zoom') setDeityStage('hover');
+            else if (deityStage === 'transform') {
+              setDeityStage('env');
+              setShowProject(true);
+            }
+            return;
+          }
+        }
+      }
+
+      drawFrame(videoKey, currentFrame);
+    };
+
+    intervalId = setInterval(advanceFrame, 40);
+
+    return () => clearInterval(intervalId);
+  }, [phase, activeDeity, deityStage, isReversing, criticalLoaded, drawFrame]);
+
+  // ─────────────────────────────────────────────────────────────
+  // 14. EVENT HANDLERS
+  // ─────────────────────────────────────────────────────────────
   const handleDeityClick = useCallback((deity) => {
     setActiveDeity(deity);
     setPhase('deity');
     setDeityStage('zoom');
     setIsReversing(false);
     setShowProject(false);
-    playSound('transition', { frequency: 700, duration: 0.2 });
-    setCursorType('');
-    setSrAnnouncement(`Entering ${PROJECTS[deity]?.name} project`);
-    visitedProjectsRef.current.add(deity);
-
-    if (visitedProjectsRef.current.size === 3) {
-      unlock('EXPLORER');
-    }
-  }, [playSound, unlock]);
+  }, []);
 
   const handleDeityBack = useCallback(() => {
     setShowProject(false);
     setIsReversing(true);
-    playSound('back', { frequency: 500, duration: 0.15 });
-    setSrAnnouncement('Returning to mountain selection');
-  }, [playSound]);
+  }, []);
 
-  // Keyboard navigation
-  const scrollToNext = useCallback(() => {
-    if (phase !== 'intro' && phase !== 'outro') return;
-    window.scrollBy({ top: 100, behavior: 'smooth' });
-    playSound('scroll', { frequency: 600, duration: 0.05 });
-  }, [phase, playSound]);
+  const handleContinueToOutro = useCallback(() => {
+    setShowProject(false);
+    setActiveDeity(null);
+    setPhase('outro');
+    window.scrollTo(0, 0);
+  }, []);
 
-  const scrollToPrev = useCallback(() => {
-    if (phase !== 'intro' && phase !== 'outro') return;
-    window.scrollBy({ top: -100, behavior: 'smooth' });
-    playSound('scroll', { frequency: 500, duration: 0.05 });
-  }, [phase, playSound]);
-
-  const handleKeySelect = useCallback((key) => {
-    if (currentScenes[sceneIndex]?.allowClick && phase === 'intro') {
-      if (key) {
-        handleDeityClick(key);
-      }
-    }
-  }, [phase, sceneIndex, currentScenes, handleDeityClick]);
-
-  const handleKeyBack = useCallback(() => {
-    if (phase === 'deity') {
-      handleDeityBack();
-    }
-  }, [phase, handleDeityBack]);
-
-  useKeyboardNavigation({
-    onNext: scrollToNext,
-    onPrev: scrollToPrev,
-    onSelect: handleKeySelect,
-    onBack: handleKeyBack
-  });
-
-  // Touch gestures
   const handleProjectNavigate = useCallback((direction) => {
     if (!activeDeity) return;
 
-    let newDeity;
     const currentIndex = PROJECT_ORDER.indexOf(activeDeity);
+    let newDeity;
 
-    if (direction === 'prev') {
+    if (direction === 'prev' && currentIndex > 0) {
       newDeity = PROJECT_ORDER[currentIndex - 1];
-    } else if (direction === 'next') {
+    } else if (direction === 'next' && currentIndex < PROJECT_ORDER.length - 1) {
       newDeity = PROJECT_ORDER[currentIndex + 1];
     } else if (PROJECT_ORDER.includes(direction)) {
       newDeity = direction;
@@ -661,383 +735,30 @@ function AppContent() {
     }
   }, [activeDeity]);
 
-  useGestures(gestureRef, {
-    onSwipeUp: scrollToNext,
-    onSwipeDown: scrollToPrev,
-    onSwipeLeft: () => {
-      if (activeDeity) {
-        handleProjectNavigate('next');
-      }
-    },
-    onSwipeRight: () => {
-      if (activeDeity) {
-        handleProjectNavigate('prev');
-      }
-    }
-  });
+  // ─────────────────────────────────────────────────────────────
+  // 15. RENDER
+  // ─────────────────────────────────────────────────────────────
 
-  // ── ASSET LOADER ────────────────────────────────────────
-  useEffect(() => {
-    if (loadingRef.current) return;
-    loadingRef.current = true;
-
-    const tryLoadImage = (src) => {
-      return new Promise(resolve => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => resolve(img.naturalWidth > 0 ? img : null);
-        img.onerror = () => resolve(null);
-        img.src = src;
-      });
-    };
-
-    const loadVideoFrames = async (key) => {
-      const config = VIDEOS[key];
-      if (!config) return 0;
-
-      setLoadingItem(config.folder.replace(/_/g, ' '));
-      const promises = [];
-
-      for (let j = 1; j <= config.frames; j++) {
-        promises.push(new Promise(async (resolve) => {
-          const padded = String(j).padStart(4, '0');
-
-          let src = `${R2_BASE_URL}/${config.folder}/frame_${padded}.webp`;
-          let img = await tryLoadImage(src);
-
-          if (!img) {
-            src = `${R2_BASE_URL}/${config.folder}/frame_${padded}.jpg`;
-            img = await tryLoadImage(src);
-          }
-
-          if (img) resolve(img);
-          else resolve(null);
-        }));
-      }
-
-      const results = await Promise.all(promises);
-      const frames = results.filter(img => img !== null);
-
-      frameBankRef.current[key] = frames;
-      return frames.length;
-    };
-
-    const loadAll = async () => {
-      const keys = Object.keys(VIDEOS);
-      let totalLoaded = 0;
-
-      for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
-        const loadedFrames = await loadVideoFrames(key);
-        if (loadedFrames > 0) totalLoaded++;
-        setLoadedVideos(totalLoaded);
-        setLoadProgress((i + 1) / keys.length);
-      }
-
-      const criticalVideos = ['NAME_FALL', 'TRAIN_SMASHING', 'TRAIN_EXIT', 'MOUNTAIN_ZOOM'];
-      const missingCritical = criticalVideos.filter(k => !frameBankRef.current[k]?.length);
-
-      if (missingCritical.length > 0) {
-        setLoadError(`Failed to load: ${missingCritical.join(', ')}`);
-      }
-
-      setTimeout(() => setAllLoaded(true), 500);
-    };
-
-    loadAll();
-  }, []);
-
-  // ── CANVAS SETUP ────────────────────────────────────────
-  useEffect(() => {
-    const setupCanvas = () => {
-      if (canvasRef.current) {
-        canvasRef.current.width = window.innerWidth;
-        canvasRef.current.height = window.innerHeight;
-        if (lastDrawnRef.current.video && allLoaded) {
-          lastDrawnRef.current.frame = -1;
-          drawFrame(lastDrawnRef.current.video, 0);
-        }
-      }
-    };
-
-    setupCanvas();
-    window.addEventListener('resize', setupCanvas);
-    return () => window.removeEventListener('resize', setupCanvas);
-  }, [allLoaded, drawFrame]);
-
-  // ── INITIAL FRAME ───────────────────────────────────────
-  useEffect(() => {
-    if (allLoaded && frameBankRef.current['NAME_FALL']?.length > 0) {
-      drawFrame('NAME_FALL', 0);
-    }
-  }, [allLoaded, drawFrame]);
-
-  // ── INFINITE LOOP HANDLER ───────────────────────────────
-  const triggerLoop = useCallback(() => {
-    if (isLooping) return;
-    setIsLooping(true);
-    setFadeOverlay(true);
-
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-      setPhase('intro');
-      setSceneIndex(0);
-      lastDrawnRef.current = { video: null, frame: -1 };
-      drawFrame('NAME_FALL', 0);
-
-      setTimeout(() => {
-        setFadeOverlay(false);
-        setIsLooping(false);
-      }, 300);
-    }, 500);
-  }, [isLooping, drawFrame]);
-
-  // ── MAIN SCROLL HANDLER ─────────────────────────────────
-  useEffect(() => {
-    if (!allLoaded || phase === 'deity') return;
-
-    const scenes = phase === 'intro' ? INTRO_SCENES : OUTRO_SCENES;
-
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      let accumulatedHeight = 0;
-
-      for (let i = 0; i < scenes.length; i++) {
-        const scene = scenes[i];
-        const sceneStart = accumulatedHeight;
-        const sceneEnd = accumulatedHeight + scene.scrollHeight;
-
-        if (scrollY < sceneEnd || i === scenes.length - 1) {
-          setSceneIndex(i);
-
-          const sceneProgress = Math.max(0, Math.min(1, (scrollY - sceneStart) / scene.scrollHeight));
-          const frames = frameBankRef.current[scene.video];
-
-          if (frames && frames.length > 0) {
-            const isTrainHoverScene = (scene.id === 'train_idle' || scene.id === 'train_at_rest');
-            if (isTrainHoverScene && isTrainHovered) break;
-
-            let targetFrame = scene.holdLastFrame ? frames.length - 1 : sceneProgress * (frames.length - 1);
-            drawFrame(scene.video, targetFrame);
-
-            if (scene.triggerLoop && sceneProgress > 0.95) {
-              if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
-              loopTimeoutRef.current = setTimeout(triggerLoop, 500);
-            }
-          }
-          break;
-        }
-        accumulatedHeight += scene.scrollHeight;
-      }
-    };
-
-    let rafId;
-    const throttledScroll = () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(handleScroll);
-    };
-
-    window.addEventListener('scroll', throttledScroll, { passive: true });
-    handleScroll();
-
-    return () => {
-      window.removeEventListener('scroll', throttledScroll);
-      if (rafId) cancelAnimationFrame(rafId);
-      if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
-    };
-  }, [allLoaded, phase, isTrainHovered, drawFrame, triggerLoop]);
-
-  // ── TRAIN HOVER ANIMATION ───────────────────────────────
-  useEffect(() => {
-    if (!allLoaded) return;
-
-    const currentScene = currentScenes[sceneIndex];
-    if (!currentScene?.allowHover) {
-      if (trainFrame !== 0) setTrainFrame(0);
-      return;
-    }
-
-    const frames = frameBankRef.current['TRAIN_INTERACTION'];
-    if (!frames?.length) return;
-
-    const maxFrame = frames.length - 1;
-
-    if (isTrainHovered && trainFrame < maxFrame) {
-      if (trainFrame === 0) {
-        trainInteractionCountRef.current++;
-        if (trainInteractionCountRef.current >= 10) {
-          unlock('TRAIN_MASTER');
-        }
-        playSound('hover', { frequency: 650, duration: 0.1 });
-      }
-
-      const timer = setTimeout(() => {
-        const newFrame = Math.min(trainFrame + 1, maxFrame);
-        setTrainFrame(newFrame);
-        drawFrame('TRAIN_INTERACTION', newFrame);
-      }, 30);
-      return () => clearTimeout(timer);
-    } else if (!isTrainHovered && trainFrame > 0) {
-      const timer = setTimeout(() => {
-        const newFrame = Math.max(trainFrame - 2, 0);
-        setTrainFrame(newFrame);
-        if (newFrame > 0) {
-          drawFrame('TRAIN_INTERACTION', newFrame);
-        } else {
-          const scene = currentScenes[sceneIndex];
-          if (scene) {
-            const baseFrames = frameBankRef.current[scene.video];
-            if (baseFrames?.length) {
-              lastDrawnRef.current.frame = -1;
-              drawFrame(scene.video, baseFrames.length - 1);
-            }
-          }
-        }
-      }, 20);
-      return () => clearTimeout(timer);
-    }
-  }, [allLoaded, isTrainHovered, trainFrame, sceneIndex, currentScenes, drawFrame, unlock, playSound]);
-
-  // ── DEITY ANIMATION LOOP ────────────────────────────────
-  useEffect(() => {
-    if (phase !== 'deity' || !activeDeity || !allLoaded) return;
-
-    const project = PROJECTS[activeDeity];
-    let videoKey;
-    let shouldLoop = false;
-
-    if (deityStage === 'zoom') videoKey = project.zoomVideo;
-    else if (deityStage === 'hover') { videoKey = project.hoverVideo; shouldLoop = true; }
-    else if (deityStage === 'transform') videoKey = project.transformVideo;
-    else if (deityStage === 'env') { videoKey = project.envVideo; shouldLoop = true; }
-
-    const frames = frameBankRef.current[videoKey];
-    if (!frames?.length) return;
-
-    let currentFrame = isReversing ? frames.length - 1 : 0;
-
-    const interval = setInterval(() => {
-      if (isReversing) {
-        currentFrame--;
-        if (currentFrame < 0) {
-          clearInterval(interval);
-          if (deityStage === 'env') setDeityStage('transform');
-          else if (deityStage === 'transform') setDeityStage('zoom');
-          else if (deityStage === 'zoom') {
-            setIsReversing(false);
-            setActiveDeity(null);
-            setPhase('intro');
-            const scrollTarget = INTRO_SCENES.slice(0, 5).reduce((a, b) => a + b.scrollHeight, 0);
-            window.scrollTo(0, scrollTarget);
-          }
-          return;
-        }
-      } else {
-        currentFrame++;
-        if (currentFrame >= frames.length) {
-          if (shouldLoop) currentFrame = 0;
-          else {
-            clearInterval(interval);
-            if (deityStage === 'zoom') setDeityStage('hover');
-            else if (deityStage === 'transform') { setDeityStage('env'); setShowProject(true); }
-            return;
-          }
-        }
-      }
-      drawFrame(videoKey, currentFrame);
-    }, 40);
-
-    return () => clearInterval(interval);
-  }, [phase, activeDeity, deityStage, isReversing, allLoaded, drawFrame]);
-
-  const handleContinueToOutro = useCallback(() => {
-    setShowProject(false);
-    setActiveDeity(null);
-    setPhase('outro');
-    window.scrollTo(0, 0);
-    playSound('continue', { frequency: 800, duration: 0.25 });
-    setSrAnnouncement('Continuing journey to outro');
-
-    const elapsedTime = (Date.now() - startTimeRef.current) / 1000;
-    if (elapsedTime < 120) {
-      unlock('SPEED_RUNNER');
-    }
-  }, [playSound, unlock]);
-
-  // ── LOADING SCREEN ──────────────────────────────────────
-  if (!allLoaded) {
-    return (
-      <LoadingScreen
-        progress={loadProgress}
-        currentItem={loadingItem}
-        loadedVideos={loadedVideos}
-        totalVideos={totalVideos}
-      />
-    );
+  // Loading screen
+  if (!criticalLoaded) {
+    return <LoadingScreen progress={loadProgress} stage={loadStage} />;
   }
 
-  // ── ERROR STATE ─────────────────────────────────────────
-  if (loadError) {
-    return (
-      <div className="loading-screen">
-        <div className="loading-content">
-          <div className="error-icon">⚠️</div>
-          <h2 className="error-title">Loading Error</h2>
-          <p className="error-message">{loadError}</p>
-          <button className="error-retry" onClick={() => window.location.reload()}>
-            Retry Loading
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const totalScrollHeight = currentScenes.reduce((acc, scene) => acc + scene.scrollHeight, 0) + window.innerHeight;
   const currentProjectIndex = activeDeity ? PROJECT_ORDER.indexOf(activeDeity) : -1;
 
   return (
-    <div ref={gestureRef}>
-      <SkipLink />
-      <ScreenReaderAnnouncement message={srAnnouncement} />
-      {!('ontouchstart' in window) && <CustomCursor type={cursorType} />}
-      <CinematicBars visible={phase === 'deity'} />
-
-      {(phase === 'intro' || phase === 'outro') && (
-        <JourneyTimeline
-          currentPhase={phase}
-          sceneIndex={sceneIndex}
-          scenes={currentScenes}
-          onNavigate={(index) => {
-            const targetScroll = currentScenes.slice(0, index).reduce((a, b) => a + b.scrollHeight, 0);
-            window.scrollTo({ top: targetScroll, behavior: 'smooth' });
-          }}
-        />
-      )}
-
-      <SoundToggle enabled={soundEnabled} onToggle={() => setSoundEnabled(!soundEnabled)} />
-      {showNotification && <AchievementNotification achievement={showNotification} />}
-      <OrientationWarning />
-
-      {window.innerWidth < 768 && (phase === 'intro' || phase === 'outro') && (
-        <MiniMap
-          scenes={currentScenes}
-          currentIndex={sceneIndex}
-          onNavigate={(index) => {
-            const targetScroll = currentScenes.slice(0, index).reduce((a, b) => a + b.scrollHeight, 0);
-            window.scrollTo({ top: targetScroll, behavior: 'smooth' });
-          }}
-        />
-      )}
-
-      {konamiActivated && (
-        <div className="konami-overlay">
-          <div className="konami-stars">✨🎮✨</div>
-          <p>Secret Code Activated!</p>
+    <div className="app-container">
+      {/* Background loading indicator */}
+      {loadProgress < 1 && (
+        <div className="bg-load-indicator">
+          Loading: {Math.round(loadProgress * 100)}%
         </div>
       )}
 
+      {/* Main Canvas */}
       <canvas
         ref={canvasRef}
+        className="main-canvas"
         style={{
           position: 'fixed',
           top: 0,
@@ -1045,18 +766,30 @@ function AppContent() {
           width: '100vw',
           height: '100vh',
           zIndex: 1,
-          display: 'block',
           background: '#020c1a'
         }}
       />
 
-      <div style={{ position: 'relative', zIndex: 2, height: totalScrollHeight, pointerEvents: 'none' }} />
+      {/* Scroll Container */}
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          height: totalScrollHeight,
+          pointerEvents: 'none'
+        }}
+      />
 
+      {/* Fade Overlay for Loop */}
       <div className={`fade-overlay ${fadeOverlay ? 'active' : ''}`} />
 
+      {/* UI Overlays */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 10, pointerEvents: 'none' }}>
+
+        {/* INTRO PHASE */}
         {phase === 'intro' && (
           <>
+            {/* Hero Overlay */}
             {currentScenes[sceneIndex]?.overlay === 'hero' && (
               <div className="hero-overlay">
                 <div className="hero-badge">SYSTEMS ENGINEER</div>
@@ -1065,25 +798,24 @@ function AppContent() {
                   <span className="hero-name-line accent">SHARMA</span>
                 </h1>
                 <p className="hero-tagline">
-                  Building high-performance systems that push the boundaries of what's possible
+                  Building high-performance systems that push the boundaries
                 </p>
                 <div className="hero-scroll-indicator">
                   <span>Scroll to begin</span>
-                  <ChevronDown className="hero-scroll-arrow" size={20} />
+                  <ChevronDown size={20} />
                 </div>
               </div>
             )}
 
+            {/* Scroll Hint */}
             {currentScenes[sceneIndex]?.overlay === 'scroll_hint' && (
               <div className="scroll-hint">
-                <div className="scroll-hint-content">
-                  <span className="scroll-hint-text">SCROLL TO EXPLORE</span>
-                  <div className="scroll-hint-line" />
-                  <ChevronDown className="scroll-arrow" size={24} />
-                </div>
+                <span>SCROLL TO EXPLORE</span>
+                <ChevronDown size={24} />
               </div>
             )}
 
+            {/* Train Hover Zone */}
             {currentScenes[sceneIndex]?.allowHover && (
               <div
                 className="train-hover-zone"
@@ -1092,18 +824,19 @@ function AppContent() {
                 onMouseLeave={() => setIsTrainHovered(false)}
               >
                 <div className={`hover-hint ${isTrainHovered ? 'active' : ''}`}>
-                  <span className="hover-emoji">🚂</span>
-                  <span className="hover-text">{isTrainHovered ? 'Exploring...' : 'Hover to interact'}</span>
+                  <span>🚂</span>
+                  <span>{isTrainHovered ? 'Exploring...' : 'Hover to interact'}</span>
                 </div>
               </div>
             )}
 
+            {/* Mountain Selection */}
             {currentScenes[sceneIndex]?.allowClick && (
               <div className="mountain-selection" style={{ pointerEvents: 'auto' }}>
                 <div className="selection-header">
                   <span className="selection-eyebrow">CHOOSE YOUR PATH</span>
                   <h2 className="selection-title">The Divine Trimurti</h2>
-                  <p className="selection-subtitle">Each mountain reveals a unique project journey</p>
+                  <p className="selection-subtitle">Each mountain reveals a unique project</p>
                 </div>
                 <div className="deity-buttons">
                   {PROJECT_ORDER.map((key) => {
@@ -1127,6 +860,7 @@ function AppContent() {
           </>
         )}
 
+        {/* DEITY PHASE */}
         {phase === 'deity' && (
           <>
             <button
@@ -1140,20 +874,40 @@ function AppContent() {
 
             {deityStage === 'hover' && !showProject && (
               <div className="reveal-overlay" style={{ pointerEvents: 'auto' }}>
-                <button className="reveal-button" onClick={() => setDeityStage('transform')}>
+                <button
+                  className="reveal-button"
+                  onClick={() => setDeityStage('transform')}
+                >
                   <span className="reveal-icon">{PROJECTS[activeDeity]?.icon}</span>
                   <span className="reveal-text">Reveal {PROJECTS[activeDeity]?.name}</span>
-                  <span className="reveal-hint">Click to discover</span>
                 </button>
               </div>
             )}
           </>
         )}
 
+        {/* OUTRO PHASE */}
         {phase === 'outro' && (
           <>
-            {currentScenes[sceneIndex]?.showParticles && <ParticleContact />}
+            {/* Contact Section */}
+            {currentScenes[sceneIndex]?.showContact && (
+              <div className="contact-section" style={{ pointerEvents: 'auto' }}>
+                <h2>Let's Connect</h2>
+                <div className="contact-links">
+                  <a href="https://github.com/DevWizard-Vandan" target="_blank" rel="noopener noreferrer">
+                    GitHub
+                  </a>
+                  <a href="https://linkedin.com/in/vandan-sharma" target="_blank" rel="noopener noreferrer">
+                    LinkedIn
+                  </a>
+                  <a href="mailto:vandan.sharma06@gmail.com">
+                    Email
+                  </a>
+                </div>
+              </div>
+            )}
 
+            {/* Train Hover (Outro) */}
             {currentScenes[sceneIndex]?.allowHover && (
               <div
                 className="train-hover-zone"
@@ -1162,27 +916,28 @@ function AppContent() {
                 onMouseLeave={() => setIsTrainHovered(false)}
               >
                 <div className={`hover-hint ${isTrainHovered ? 'active' : ''}`}>
-                  <span className="hover-emoji">🚂</span>
-                  <span className="hover-text">{isTrainHovered ? 'Hello again!' : 'Hover to interact'}</span>
+                  <span>🚂</span>
+                  <span>{isTrainHovered ? 'Hello again!' : 'Hover to interact'}</span>
                 </div>
               </div>
             )}
 
-            {currentScenes[sceneIndex]?.showResumeClick && (
-              <div className="resume-click-zone" style={{ pointerEvents: 'auto' }}>
+            {/* Resume */}
+            {currentScenes[sceneIndex]?.showResume && (
+              <div className="resume-section" style={{ pointerEvents: 'auto' }}>
                 <a
                   href={`${process.env.PUBLIC_URL}/resume.pdf`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="resume-prompt"
+                  className="resume-button"
                 >
-                  <FileText size={36} />
-                  <span className="resume-title">View Resume</span>
-                  <span className="resume-hint">Click to open PDF</span>
+                  <FileText size={24} />
+                  <span>View Resume</span>
                 </a>
               </div>
             )}
 
+            {/* Loop Indicator */}
             {currentScenes[sceneIndex]?.triggerLoop && (
               <div className="loop-indicator">
                 <span>Journey complete • Scroll to restart</span>
@@ -1192,6 +947,7 @@ function AppContent() {
         )}
       </div>
 
+      {/* Project Panel Modal */}
       {showProject && activeDeity && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 100, pointerEvents: 'auto' }}>
           <ProjectPanel
@@ -1205,13 +961,5 @@ function AppContent() {
         </div>
       )}
     </div>
-  );
-}
-
-export default function App() {
-  return (
-    <PortfolioErrorBoundary>
-      <AppContent />
-    </PortfolioErrorBoundary>
   );
 }
