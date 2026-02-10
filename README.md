@@ -1,70 +1,80 @@
-# Getting Started with Create React App
+# 🌌 Vandan Sharma | Systems Engineer
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+<div align="center">
+  <img src="https://skillicons.dev/icons?i=react,rust,java,spring,postgres,docker,redis,nextjs" /><br><br>
+  
+  **Architecting Low-Latency Distributed Systems & Cosmic Visual Experiences**
+  
+  [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/DevWizard-Vandan)
+  [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/vandan-sharma-682536330)
+  [![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:vandan.sharma06@gmail.com)
+</div>
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🚀 The Infinite Aperture
+This portfolio is not just a showcase; it's a **cinematic journey** through the realms of distributed systems. Built with a focus on immersive storytelling, it uses **frame-by-frame video orchestration** and **physics-based interactions** to guide you through my engineering philosophy.
 
-### `npm start`
+### ✨ Key Features
+- **Cosmic Journey Hook**: A scroll-driven narrative that feels like exploring the divine architecture of code.
+- **Dynamic Project Deities**: Three core pillars of engineering represented by Brahma (Creation), Shiva (Transformation), and Vishnu (Preservation).
+- **Interactive Physics**: Real-time particle systems and hover-driven video interactions using Lucide-react and CSS physics.
+- **Ultra-Performance**: Optimized asset loading with a custom preloader and multi-format fallback (WebP/JPG).
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🛠 Project Pillars
 
-### `npm test`
+### ⚡ Titan (The Harbinger of Speed)
+*Ultra low-latency HFT matching engine.*
+- **Performance**: 12.8M matches/sec with sub-microsecond latency.
+- **Tech**: `Rust`, `Lock-Free DS`, `SPSC Ring`, `SIMD`, `io_uring`.
+- **Core**: Designed for orchestrating market chaos with zero-copy networking.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 🔱 MiniDrive (The Architect of Storage)
+*Hybrid Cloud Storage solution.*
+- **Feature**: Achieved **40% storage reduction** via block-level deduplication.
+- **Tech**: `Java`, `Spring Boot`, `MinIO`, `PostgreSQL`, `Redis`, `Docker`.
+- **Core**: Seamlessly blending MinIO object storage with sophisticated metadata management.
 
-### `npm run build`
+### 💎 Vajra (The Eternal Guardian)
+*Distributed Vector Database.*
+- **Architecture**: Custom Raft consensus implementation.
+- **Tech**: `Rust`, `Raft`, `HNSW Indexing`, `gRPC`, `RocksDB`.
+- **Core**: Optimized for AI/ML embedding storage with strong consistency and horizontal scaling.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 💻 Tech Stack
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+| Domain | Technologies |
+| :--- | :--- |
+| **Languages** | Rust, Java, JavaScript (ES6+), SQL |
+| **Backend** | Spring Boot, Node.js, gRPC, Raft, SIMD |
+| **Frontend** | React, Next.js, Framer Motion, Three.js (Aperture Concepts) |
+| **Infrastructure** | Docker, MinIO, Redis, PostgreSQL, RocksDB, io_uring |
+| **Testing** | Jest, RTL, Rust Unit Testing |
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🏗 Setup & Installation
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Experience the cosmic journey locally:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+# Clone the repository
+git clone https://github.com/DevWizard-Vandan/vandan-portfolio.git
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+# Install dependencies
+npm install
 
-## Learn More
+# Start the development server
+npm start
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+---
 
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+<div align="center">
+  <p>Built with ❤️ by Vandan Sharma</p>
+  <sub>"Orchestrating Market Chaos, One Thread at a Time."</sub>
+</div>
