@@ -118,7 +118,6 @@ export const usePrefersReducedMotion = () => {
 export const useSoundEffects = () => {
     const [enabled, setEnabled] = useState(false);
     const audioContextRef = useRef(null);
-    const soundsRef = useRef({});
 
     useEffect(() => {
         // Initialize Web Audio API
@@ -212,10 +211,18 @@ export const useScreenShake = () => {
 
 // ── KONAMI CODE ─────────────────────────────────────────────
 export const useKonamiCode = (callback) => {
-    const sequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
     const inputRef = useRef([]);
 
     useEffect(() => {
+        // Define sequence inside useEffect to satisfy exhaustive-deps
+        const sequence = [
+            'ArrowUp', 'ArrowUp',
+            'ArrowDown', 'ArrowDown',
+            'ArrowLeft', 'ArrowRight',
+            'ArrowLeft', 'ArrowRight',
+            'b', 'a'
+        ];
+
         const handleKeyDown = (e) => {
             inputRef.current.push(e.key);
             inputRef.current = inputRef.current.slice(-10);

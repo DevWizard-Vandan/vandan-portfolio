@@ -139,14 +139,6 @@ const runIdle = (cb) => {
   return setTimeout(cb, 50);
 };
 
-const cancelIdle = (id) => {
-  if (typeof window.cancelIdleCallback !== 'undefined') {
-    window.cancelIdleCallback(id);
-  } else {
-    clearTimeout(id);
-  }
-};
-
 const loadSingleImage = (src) => {
   return new Promise((resolve) => {
     const img = new Image();
@@ -341,7 +333,6 @@ export default function App() {
   const [loadProgress, setLoadProgress] = useState(0);
   const [loadStage, setLoadStage] = useState('Initializing...');
   const [criticalLoaded, setCriticalLoaded] = useState(false);
-  const [introLoaded, setIntroLoaded] = useState(false);
 
   // App State
   const [phase, setPhase] = useState('intro');
@@ -359,7 +350,7 @@ export default function App() {
   const startTimeRef = useRef(Date.now());
 
   // Enhancement Hooks
-  const { unlocked, unlock, showNotification } = useAchievements();
+  const { unlock, showNotification } = useAchievements();
   const { enabled: soundEnabled, setEnabled: setSoundEnabled, playSound } = useSoundEffects();
   const prefersReducedMotion = usePrefersReducedMotion();
 
@@ -423,7 +414,6 @@ export default function App() {
       setLoadStage('Preparing introduction...');
       await loadBatch(INTRO_VIDEOS, 4, 8);
       setLoadProgress(0.4);
-      setIntroLoaded(true);
 
       // Phase 3: Deity videos (sparse)
       setLoadStage('Loading project scenes...');
@@ -626,12 +616,12 @@ export default function App() {
       if (isTrainHovered && currentFrame < maxFrame) {
         trainFrameRef.current = Math.min(currentFrame + 1, maxFrame);
         drawFrame('TRAIN_INTERACTION', trainFrameRef.current);
-        animationId = setTimeout(animate, 30);
+        animationId = setTimeout(animate, prefersReducedMotion ? 50 : 30);
       } else if (!isTrainHovered && currentFrame > 0) {
         trainFrameRef.current = Math.max(currentFrame - 2, 0);
         if (trainFrameRef.current > 0) {
           drawFrame('TRAIN_INTERACTION', trainFrameRef.current);
-          animationId = setTimeout(animate, 20);
+          animationId = setTimeout(animate, prefersReducedMotion ? 30 : 20);
         } else {
           // Return to base video
           const scene = currentScenes[sceneIndex];
@@ -646,7 +636,7 @@ export default function App() {
 
     animate();
     return () => clearTimeout(animationId);
-  }, [criticalLoaded, isTrainHovered, sceneIndex, currentScenes, drawFrame]);
+  }, [criticalLoaded, isTrainHovered, sceneIndex, currentScenes, drawFrame, prefersReducedMotion]);
 
   // ─────────────────────────────────────────────────────────────
   // 13. DEITY ANIMATION LOOP
@@ -671,6 +661,9 @@ export default function App() {
     const maxFrame = frames.length - 1;
     let currentFrame = isReversing ? maxFrame : 0;
     let intervalId;
+
+    // Adjust animation speed based on reduced motion preference
+    const frameInterval = prefersReducedMotion ? 60 : 40;
 
     const advanceFrame = () => {
       if (isReversing) {
@@ -709,10 +702,10 @@ export default function App() {
       drawFrame(videoKey, currentFrame);
     };
 
-    intervalId = setInterval(advanceFrame, 40);
+    intervalId = setInterval(advanceFrame, frameInterval);
 
     return () => clearInterval(intervalId);
-  }, [phase, activeDeity, deityStage, isReversing, criticalLoaded, drawFrame]);
+  }, [phase, activeDeity, deityStage, isReversing, criticalLoaded, drawFrame, prefersReducedMotion]);
 
   // ─────────────────────────────────────────────────────────────
   // 14. EVENT HANDLERS
@@ -776,15 +769,15 @@ export default function App() {
   // ─────────────────────────────────────────────────────────────
   const scrollToNext = useCallback(() => {
     if (phase !== 'intro' && phase !== 'outro') return;
-    window.scrollBy({ top: 100, behavior: 'smooth' });
+    window.scrollBy({ top: 100, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
     playSound('scroll', { frequency: 500, duration: 0.05 });
-  }, [phase, playSound]);
+  }, [phase, playSound, prefersReducedMotion]);
 
   const scrollToPrev = useCallback(() => {
     if (phase !== 'intro' && phase !== 'outro') return;
-    window.scrollBy({ top: -100, behavior: 'smooth' });
+    window.scrollBy({ top: -100, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
     playSound('scroll', { frequency: 450, duration: 0.05 });
-  }, [phase, playSound]);
+  }, [phase, playSound, prefersReducedMotion]);
 
   const handleKeySelect = useCallback((key) => {
     const currentScene = currentScenes[sceneIndex];
