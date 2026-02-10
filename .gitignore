@@ -42,8 +42,6 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 /public/Video_assets/
-/public/resume.html
-/public/Resume.pdf
 /public/cleanup_jpg.ps1
 /public/convert_all.ps1
 

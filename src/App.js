@@ -994,15 +994,27 @@ export default function App() {
             {/* Resume */}
             {currentScenes[sceneIndex]?.showResume && (
               <div className="resume-section" style={{ pointerEvents: 'auto' }}>
-                <a
-                  href={`${process.env.PUBLIC_URL}/resume.pdf`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="resume-button"
-                >
-                  <FileText size={24} />
-                  <span>View Resume</span>
-                </a>
+                <div className="resume-buttons">
+                  <a
+                    href={`${process.env.PUBLIC_URL}/resume.pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="resume-button"
+                    download="Vandan_Sharma_Resume.pdf"
+                  >
+                    <FileText size={24} />
+                    <span>Download PDF</span>
+                  </a>
+                  <a
+                    href={`${process.env.PUBLIC_URL}/resume.html`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="resume-button secondary"
+                  >
+                    <ExternalLink size={24} />
+                    <span>View Online</span>
+                  </a>
+                </div>
               </div>
             )}
 
