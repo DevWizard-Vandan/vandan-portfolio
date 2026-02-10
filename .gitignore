@@ -52,3 +52,4 @@ yarn-debug.log*
 yarn-error.log*
 
 public/Video_assets
+upload-to-r2.js
