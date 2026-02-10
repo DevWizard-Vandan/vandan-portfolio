@@ -6,11 +6,27 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Github, ChevronDown, ArrowRight, ArrowLeft, ExternalLink, FileText } from 'lucide-react';
 import './App.css';
+import './enhancements.css';
+
+// Enhancement hooks
+import {
+  useKeyboardNavigation,
+  useAchievements,
+  useSoundEffects,
+  usePrefersReducedMotion
+} from './hooks';
+
+// Enhancement components
+import {
+  ScreenReaderAnnouncement,
+  AchievementNotification,
+  SoundToggle
+} from './components';
 
 // ─────────────────────────────────────────────────────────────
 // 1. CONFIGURATION
 // ─────────────────────────────────────────────────────────────
-const R2_BASE_URL = "https://pub-929342777f974737b83d97e3f2832344.r2.dev";
+const R2_BASE_URL = "https://portfolio-assets-proxy.vandan-sharma06.workers.dev";
 
 const VIDEOS = {
   NAME_FALL: { folder: 'Video_1_Name_Fall', frames: 144 },
@@ -336,6 +352,16 @@ export default function App() {
   const [isReversing, setIsReversing] = useState(false);
   const [isTrainHovered, setIsTrainHovered] = useState(false);
   const [fadeOverlay, setFadeOverlay] = useState(false);
+
+  // Enhancement State
+  const [srAnnouncement, setSrAnnouncement] = useState('');
+  const visitedProjectsRef = useRef(new Set());
+  const startTimeRef = useRef(Date.now());
+
+  // Enhancement Hooks
+  const { unlocked, unlock, showNotification } = useAchievements();
+  const { enabled: soundEnabled, setEnabled: setSoundEnabled, playSound } = useSoundEffects();
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   const currentScenes = useMemo(() =>
     phase === 'intro' ? INTRO_SCENES : OUTRO_SCENES
@@ -697,19 +723,29 @@ export default function App() {
     setDeityStage('zoom');
     setIsReversing(false);
     setShowProject(false);
-  }, []);
+    playSound('transition', { frequency: 700, duration: 0.2 });
+    setSrAnnouncement(`Entering ${PROJECTS[deity]?.name} project`);
+    visitedProjectsRef.current.add(deity);
+    if (visitedProjectsRef.current.size === 3) { unlock('EXPLORER'); }
+  }, [playSound, unlock]);
 
   const handleDeityBack = useCallback(() => {
     setShowProject(false);
     setIsReversing(true);
-  }, []);
+    playSound('back', { frequency: 500, duration: 0.15 });
+    setSrAnnouncement('Returning to mountain selection');
+  }, [playSound]);
 
   const handleContinueToOutro = useCallback(() => {
     setShowProject(false);
     setActiveDeity(null);
     setPhase('outro');
     window.scrollTo(0, 0);
-  }, []);
+    playSound('click', { frequency: 800, duration: 0.25 });
+    setSrAnnouncement('Continuing journey to finale');
+    const elapsedTime = (Date.now() - startTimeRef.current) / 1000;
+    if (elapsedTime < 120) { unlock('SPEED_RUNNER'); }
+  }, [playSound, unlock]);
 
   const handleProjectNavigate = useCallback((direction) => {
     if (!activeDeity) return;
@@ -736,6 +772,41 @@ export default function App() {
   }, [activeDeity]);
 
   // ─────────────────────────────────────────────────────────────
+  // KEYBOARD NAVIGATION
+  // ─────────────────────────────────────────────────────────────
+  const scrollToNext = useCallback(() => {
+    if (phase !== 'intro' && phase !== 'outro') return;
+    window.scrollBy({ top: 100, behavior: 'smooth' });
+    playSound('scroll', { frequency: 500, duration: 0.05 });
+  }, [phase, playSound]);
+
+  const scrollToPrev = useCallback(() => {
+    if (phase !== 'intro' && phase !== 'outro') return;
+    window.scrollBy({ top: -100, behavior: 'smooth' });
+    playSound('scroll', { frequency: 450, duration: 0.05 });
+  }, [phase, playSound]);
+
+  const handleKeySelect = useCallback((key) => {
+    const currentScene = currentScenes[sceneIndex];
+    if (currentScene?.allowClick && phase === 'intro' && key) {
+      handleDeityClick(key);
+    }
+  }, [sceneIndex, currentScenes, phase, handleDeityClick]);
+
+  const handleKeyBack = useCallback(() => {
+    if (phase === 'deity' && showProject) {
+      handleDeityBack();
+    }
+  }, [phase, showProject, handleDeityBack]);
+
+  useKeyboardNavigation({
+    onNext: scrollToNext,
+    onPrev: scrollToPrev,
+    onSelect: handleKeySelect,
+    onBack: handleKeyBack
+  });
+
+  // ─────────────────────────────────────────────────────────────
   // 15. RENDER
   // ─────────────────────────────────────────────────────────────
 
@@ -754,6 +825,11 @@ export default function App() {
           Loading: {Math.round(loadProgress * 100)}%
         </div>
       )}
+
+      {/* Enhancement Components */}
+      <ScreenReaderAnnouncement message={srAnnouncement} />
+      <SoundToggle enabled={soundEnabled} onToggle={() => setSoundEnabled(!soundEnabled)} />
+      {showNotification && <AchievementNotification achievement={showNotification} />}
 
       {/* Main Canvas */}
       <canvas
