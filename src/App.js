@@ -1,11 +1,42 @@
 // ============================================================
 // FILE: src/App.js
-// Version: Enhanced - Beautiful Loading, Infinite Scroll, Smooth Navigation
+// Version: Enhanced v2 - Full Accessibility, Interactivity & Polish
 // ============================================================
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Github, Linkedin, Mail, FileText, ChevronDown, ArrowRight, ArrowLeft, ExternalLink } from 'lucide-react';
 import './App.css';
+const R2_BASE_URL = "https://pub-3e38bbb0c6cf4dedbcb0737064924fb2.r2.dev";
+import './enhancements.css';
+
+// Import custom hooks
+import {
+  useKeyboardNavigation,
+  useGestures,
+  usePrefersReducedMotion,
+  useSoundEffects,
+  useAchievements,
+  useScreenShake,
+  useKonamiCode,
+  useColorTheme,
+  useConsoleMessage
+} from './hooks';
+
+// Import components
+import {
+  SkipLink,
+  ScreenReaderAnnouncement,
+  JourneyTimeline,
+  CustomCursor,
+  CinematicBars,
+  ParallaxOverlay,
+  AchievementNotification,
+  SoundToggle,
+  MobileControls,
+  OrientationWarning,
+  MiniMap,
+  PortfolioErrorBoundary
+} from './components';
 
 // ─────────────────────────────────────────────────────────────
 // 1. ASSET CONFIGURATION
@@ -480,12 +511,16 @@ const ProjectPanel = ({ project, onClose, onContinue, onNavigate, canGoPrev, can
 // ─────────────────────────────────────────────────────────────
 // 6. MAIN APP COMPONENT
 // ─────────────────────────────────────────────────────────────
-export default function App() {
+function AppContent() {
   const canvasRef = useRef(null);
+  const gestureRef = useRef(null);
   const frameBankRef = useRef({});
   const loadingRef = useRef(false);
   const lastDrawnRef = useRef({ video: null, frame: -1 });
   const loopTimeoutRef = useRef(null);
+  const trainInteractionCountRef = useRef(0);
+  const startTimeRef = useRef(Date.now());
+  const visitedProjectsRef = useRef(new Set());
 
   const [loadProgress, setLoadProgress] = useState(0);
   const [loadingItem, setLoadingItem] = useState('');
@@ -504,8 +539,83 @@ export default function App() {
   const [trainFrame, setTrainFrame] = useState(0);
   const [isLooping, setIsLooping] = useState(false);
   const [fadeOverlay, setFadeOverlay] = useState(false);
+  const [cursorType, setCursorType] = useState('');
+  const [showCinematic, setShowCinematic] = useState(false);
+  const [konamiActivated, setKonamiActivated] = useState(false);
+  const [srAnnouncement, setSrAnnouncement] = useState('');
 
   const currentScenes = phase === 'intro' ? INTRO_SCENES : OUTRO_SCENES;
+
+  // ── CUSTOM HOOKS ────────────────────────────────────────
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const { enabled: soundEnabled, setEnabled: setSoundEnabled, playSound } = useSoundEffects();
+  const { unlocked, unlock, showNotification } = useAchievements();
+  const { shake, triggerShake } = useScreenShake();
+
+  // Console easter egg
+  useConsoleMessage();
+
+  // Color theme based on current scene
+  const currentSceneKey = currentScenes[sceneIndex]?.id || 'name_fall';
+  useColorTheme(currentSceneKey);
+
+  // Konami code
+  useKonamiCode(() => {
+    setKonamiActivated(true);
+    unlock('KONAMI');
+    playSound('success', { frequency: 880, duration: 0.3 });
+    setTimeout(() => setKonamiActivated(false), 5000);
+  });
+
+  // Keyboard navigation
+  const scrollToNext = useCallback(() => {
+    if (phase !== 'intro' && phase !== 'outro') return;
+    window.scrollBy({ top: 100, behavior: 'smooth' });
+    playSound('scroll', { frequency: 600, duration: 0.05 });
+  }, [phase, playSound]);
+
+  const scrollToPrev = useCallback(() => {
+    if (phase !== 'intro' && phase !== 'outro') return;
+    window.scrollBy({ top: -100, behavior: 'smooth' });
+    playSound('scroll', { frequency: 500, duration: 0.05 });
+  }, [phase, playSound]);
+
+  const handleKeySelect = useCallback((key) => {
+    if (currentScenes[sceneIndex]?.allowClick && phase === 'intro') {
+      if (key) {
+        handleDeityClick(key);
+      }
+    }
+  }, [phase, sceneIndex, currentScenes]);
+
+  const handleKeyBack = useCallback(() => {
+    if (phase === 'deity') {
+      handleDeityBack();
+    }
+  }, [phase]);
+
+  useKeyboardNavigation({
+    onNext: scrollToNext,
+    onPrev: scrollToPrev,
+    onSelect: handleKeySelect,
+    onBack: handleKeyBack
+  });
+
+  // Touch gestures
+  useGestures(gestureRef, {
+    onSwipeUp: scrollToNext,
+    onSwipeDown: scrollToPrev,
+    onSwipeLeft: () => {
+      if (activeDeity) {
+        handleProjectNavigate('next');
+      }
+    },
+    onSwipeRight: () => {
+      if (activeDeity) {
+        handleProjectNavigate('prev');
+      }
+    }
+  });
 
   // ── DRAW FRAME FUNCTION ─────────────────────────────────
   const drawFrame = useCallback((videoKey, frameIdx) => {
@@ -570,26 +680,32 @@ export default function App() {
       if (!config) return 0;
 
       setLoadingItem(config.folder.replace(/_/g, ' '));
-      const frames = [];
+      const promises = [];
 
       for (let j = 1; j <= config.frames; j++) {
-        const padded = String(j).padStart(4, '0');
+        promises.push(new Promise(async (resolve) => {
+          const padded = String(j).padStart(4, '0');
 
-        let src = `${process.env.PUBLIC_URL}/Video_assets/${config.folder}/frame_${padded}.webp`;
-        let img = await tryLoadImage(src);
+          // 1. Try WebP from Cloudflare R2
+          // NOTICE: We use R2_BASE_URL instead of process.env.PUBLIC_URL
+          // And we REMOVED "/Video_assets" from the path because we uploaded contents to root
+          let src = `${R2_BASE_URL}/${config.folder}/frame_${padded}.webp`;
 
-        if (!img) {
-          src = `${process.env.PUBLIC_URL}/Video_assets/${config.folder}/frame_${padded}.jpg`;
-          img = await tryLoadImage(src);
-        }
+          let img = await tryLoadImage(src);
 
-        if (!img) {
-          src = `${process.env.PUBLIC_URL}/Video_assets/${config.folder}/frame_${padded}.png`;
-          img = await tryLoadImage(src);
-        }
+          // 2. Fallback JPG from R2
+          if (!img) {
+            src = `${R2_BASE_URL}/${config.folder}/frame_${padded}.jpg`;
+            img = await tryLoadImage(src);
+          }
 
-        if (img) frames.push(img);
+          if (img) resolve(img);
+          else resolve(null);
+        }));
       }
+
+      const results = await Promise.all(promises);
+      const frames = results.filter(img => img !== null);
 
       frameBankRef.current[key] = frames;
       return frames.length;
@@ -740,6 +856,15 @@ export default function App() {
     const maxFrame = frames.length - 1;
 
     if (isTrainHovered && trainFrame < maxFrame) {
+      // Track train interaction for achievement
+      if (trainFrame === 0) {
+        trainInteractionCountRef.current++;
+        if (trainInteractionCountRef.current >= 10) {
+          unlock('TRAIN_MASTER');
+        }
+        playSound('hover', { frequency: 650, duration: 0.1 });
+      }
+
       const timer = setTimeout(() => {
         const newFrame = Math.min(trainFrame + 1, maxFrame);
         setTrainFrame(newFrame);
@@ -765,7 +890,7 @@ export default function App() {
       }, 20);
       return () => clearTimeout(timer);
     }
-  }, [allLoaded, isTrainHovered, trainFrame, sceneIndex, currentScenes, drawFrame]);
+  }, [allLoaded, isTrainHovered, trainFrame, sceneIndex, currentScenes, drawFrame, unlock, playSound]);
 
   // ── DEITY ANIMATION LOOP ────────────────────────────────
   useEffect(() => {
@@ -826,19 +951,38 @@ export default function App() {
     setDeityStage('zoom');
     setIsReversing(false);
     setShowProject(false);
-  }, []);
+    playSound('transition', { frequency: 700, duration: 0.2 });
+    setCursorType('');
+    setSrAnnouncement(`Entering ${PROJECTS[deity]?.name} project`);
+    visitedProjectsRef.current.add(deity);
+
+    // Check for explorer achievement
+    if (visitedProjectsRef.current.size === 3) {
+      unlock('EXPLORER');
+    }
+  }, [playSound, unlock]);
 
   const handleDeityBack = useCallback(() => {
     setShowProject(false);
     setIsReversing(true);
-  }, []);
+    playSound('back', { frequency: 500, duration: 0.15 });
+    setSrAnnouncement('Returning to mountain selection');
+  }, [playSound]);
 
   const handleContinueToOutro = useCallback(() => {
     setShowProject(false);
     setActiveDeity(null);
     setPhase('outro');
     window.scrollTo(0, 0);
-  }, []);
+    playSound('continue', { frequency: 800, duration: 0.25 });
+    setSrAnnouncement('Continuing journey to outro');
+
+    // Check for completionist if visited all projects
+    const elapsedTime = (Date.now() - startTimeRef.current) / 1000;
+    if (elapsedTime < 120) {
+      unlock('SPEED_RUNNER');
+    }
+  }, [playSound, unlock]);
 
   const handleProjectNavigate = useCallback((direction) => {
     if (!activeDeity) return;
@@ -896,7 +1040,61 @@ export default function App() {
   const currentProjectIndex = activeDeity ? PROJECT_ORDER.indexOf(activeDeity) : -1;
 
   return (
-    <>
+    <div ref={gestureRef} className={shake ? `screen-shake-${shake}` : ''}>
+      {/* Skip Link for Accessibility */}
+      <SkipLink />
+
+      {/* Screen Reader Announcements */}
+      <ScreenReaderAnnouncement message={srAnnouncement} />
+
+      {/* Custom Cursor */}
+      {!('ontouchstart' in window) && <CustomCursor type={cursorType} />}
+
+      {/* Cinematic Bars */}
+      <CinematicBars visible={showCinematic || phase === 'deity'} />
+
+      {/* Journey Timeline */}
+      {(phase === 'intro' || phase === 'outro') && (
+        <JourneyTimeline
+          currentPhase={phase}
+          sceneIndex={sceneIndex}
+          scenes={currentScenes}
+          onNavigate={(index) => {
+            const targetScroll = currentScenes.slice(0, index).reduce((a, b) => a + b.scrollHeight, 0);
+            window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+          }}
+        />
+      )}
+
+      {/* Sound Toggle */}
+      <SoundToggle enabled={soundEnabled} onToggle={() => setSoundEnabled(!soundEnabled)} />
+
+      {/* Achievement Notification */}
+      {showNotification && <AchievementNotification achievement={showNotification} />}
+
+      {/* Orientation Warning for Mobile */}
+      <OrientationWarning />
+
+      {/* Mini Map for Mobile */}
+      {window.innerWidth < 768 && (phase === 'intro' || phase === 'outro') && (
+        <MiniMap
+          scenes={currentScenes}
+          currentIndex={sceneIndex}
+          onNavigate={(index) => {
+            const targetScroll = currentScenes.slice(0, index).reduce((a, b) => a + b.scrollHeight, 0);
+            window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+          }}
+        />
+      )}
+
+      {/* Konami Code Indicator */}
+      {konamiActivated && (
+        <div className="konami-overlay">
+          <div className="konami-stars">✨🎮✨</div>
+          <p>Secret Code Activated!</p>
+        </div>
+      )}
+
       {/* Fixed Canvas */}
       <canvas
         ref={canvasRef}
@@ -1062,18 +1260,29 @@ export default function App() {
       </div>
 
       {/* PROJECT PANEL */}
-      {showProject && activeDeity && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, pointerEvents: 'auto' }}>
-          <ProjectPanel
-            project={PROJECTS[activeDeity]}
-            onClose={handleDeityBack}
-            onContinue={handleContinueToOutro}
-            onNavigate={handleProjectNavigate}
-            canGoPrev={currentProjectIndex > 0}
-            canGoNext={currentProjectIndex < PROJECT_ORDER.length - 1}
-          />
-        </div>
-      )}
-    </>
+      {
+        showProject && activeDeity && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 100, pointerEvents: 'auto' }}>
+            <ProjectPanel
+              project={PROJECTS[activeDeity]}
+              onClose={handleDeityBack}
+              onContinue={handleContinueToOutro}
+              onNavigate={handleProjectNavigate}
+              canGoPrev={currentProjectIndex > 0}
+              canGoNext={currentProjectIndex < PROJECT_ORDER.length - 1}
+            />
+          </div>
+        )
+      }
+    </div >
+  );
+}
+
+// Wrap with Error Boundary
+export default function App() {
+  return (
+    <PortfolioErrorBoundary>
+      <AppContent />
+    </PortfolioErrorBoundary>
   );
 }
